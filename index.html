@@ -42,8 +42,10 @@ body{
 /* 头部 */
 .header{
   background:var(--card);border-bottom:1px solid var(--line);
-  padding:calc(18px + env(safe-area-inset-top)) 18px 14px;position:sticky;top:0;z-index:100;text-align:center;
+  padding:calc(18px + env(safe-area-inset-top,0px)) 18px 14px;position:sticky;top:0;z-index:100;text-align:center;
 }
+/* 独立 App（添加到主屏幕）模式下，补偿顶部状态栏安全区，避免标题被状态栏遮挡 */
+.standalone .header{padding-top:max(30px, calc(18px + env(safe-area-inset-top,0px)));}
 .header-title{font-size:17px;font-weight:600;color:var(--ink);letter-spacing:2px;}
 .header-sub{font-size:11px;color:var(--text3);letter-spacing:3px;margin-top:2px;}
 
@@ -1972,8 +1974,29 @@ document.addEventListener('DOMContentLoaded',init);
 // 注册 Service Worker：让网页成为可安装的独立 App（打开后无浏览器地址栏）
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('sw.js').catch(function(){/* 忽略注册失败 */});
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(reg){
+      // 检测到新版本 Service Worker 时，立即跳过等待并接管，随后刷新页面以加载最新 index.html
+      function activateWaiting(){
+        if(reg.waiting){ reg.waiting.postMessage({type:'SKIP_WAITING'}); }
+      }
+      if(reg.waiting){ activateWaiting(); }
+      reg.addEventListener('updatefound',function(){
+        var nw=reg.installing;
+        if(nw){ nw.addEventListener('statechange',function(){
+          if(nw.state==='installed' && navigator.serviceWorker.controller){ nw.postMessage({type:'SKIP_WAITING'}); }
+        }); }
+      });
+    }).catch(function(){/* 忽略注册失败 */});
+    // 当新的 Service Worker 接管页面后，刷新一次以加载最新内容
+    var reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(reloaded) return; reloaded=true; location.reload();
+    });
   });
+}
+// 独立 App 模式（添加到主屏幕）：标记 html，用于补偿顶部状态栏安全区
+if((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone){
+  document.documentElement.classList.add('standalone');
 }
 </script>
 </body>
