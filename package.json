@@ -1,0 +1,12 @@
+{
+  "name": "kaogong-workbench",
+  "version": "1.0.0",
+  "private": true,
+  "description": "考公学习工作台 - 轻量云同步后端（同时托管前端）",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
