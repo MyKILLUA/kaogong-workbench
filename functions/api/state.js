@@ -1,4 +1,5 @@
 // 考公学习工作台 · 云同步后端（Cloudflare Pages Functions 原生）
+// deploy-ver: 2026-07-30-03
 // 数据按「房间号」存于 KV 命名空间，绑定名必须为 SYNC_KV。
 // 与前端约定：GET/PUT /api/state?room=<房间号>
 //   请求体 / 返回体：{ state:{...}, keyTs:{...} }
