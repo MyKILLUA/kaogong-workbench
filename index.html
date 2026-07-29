@@ -42,7 +42,7 @@ body{
 /* 头部 */
 .header{
   background:var(--card);border-bottom:1px solid var(--line);
-  padding:18px 18px 14px;position:sticky;top:0;z-index:100;text-align:center;
+  padding:calc(18px + env(safe-area-inset-top)) 18px 14px;position:sticky;top:0;z-index:100;text-align:center;
 }
 .header-title{font-size:17px;font-weight:600;color:var(--ink);letter-spacing:2px;}
 .header-sub{font-size:11px;color:var(--text3);letter-spacing:3px;margin-top:2px;}
@@ -1124,26 +1124,27 @@ function renderBPModule(){
   if(currentView !== 'personA'){bpCard.style.display = 'none';return;}
   bpCard.style.display = 'block';
   const wrap = document.getElementById('bpChartWrap');
-  const days = lastNDays(14);
-  const labels = days.map(d=>d.slice(5));
-  const sysData = days.map(d=>{const r=state.personA.bloodPressure.records[d];return r?r.sys:null;});
-  const diaData = days.map(d=>{const r=state.personA.bloodPressure.records[d];return r?r.dia:null;});
-  const hasBP = sysData.some(v=>v!==null);
-  if(!hasBP){
-    wrap.innerHTML = '<div class="empty-state" style="padding:14px 0;"><p style="font-size:12px;">还没有血压记录，每天测完点一下「记录」即可生成趋势图。</p></div>';
+  const recs = state.personA.bloodPressure.records;
+  // 按日期升序取出全部测量记录，横坐标统一为「检测次数」
+  const entries = Object.keys(recs).sort().map(d=>recs[d]);
+  if(!entries.length){
+    wrap.innerHTML = '<div class="empty-state" style="padding:14px 0;"><p style="font-size:12px;">还没有血压记录，每天测完点一下「记录」即可生成趋势图（横坐标为检测次数）。</p></div>';
     return;
   }
-  wrap.innerHTML = '<div id="bpChart"></div>';
+  const labels = entries.map((_,i)=>(''+(i+1)));   // 1,2,3… 第几次检测
+  const sysData = entries.map(e=>e.sys);            // 收缩压
+  const diaData = entries.map(e=>e.dia);            // 舒张压
+  wrap.innerHTML = '<div class="chart-label">血压趋势（横坐标：检测次数）</div><div id="bpChart"></div>';
   setTimeout(()=>{
     const el = document.getElementById('bpChart');
     if(!el) return;
     el.innerHTML = svgLineChart({
       labels:labels,
       datasets:[
-        {label:'收缩压',data:sysData,borderColor:'#B07D52'},
-        {label:'舒张压',data:diaData,borderColor:'#4F5B66'}
+        {label:'收缩压',data:sysData,borderColor:'#F4A7C0'},   // 浅粉色
+        {label:'舒张压',data:diaData,borderColor:'#9ED3A8'}    // 浅绿色
       ],
-      yMin:40, yMax:180, yStep:20
+      yMin:40, yMax:200, yStep:20
     });
   },60);
 }
