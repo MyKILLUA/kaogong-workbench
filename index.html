@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#F6F5F3">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="考公台">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-512.png">
 <title>小硕咪 & 秋秋 · 考公学习工作台</title>
 <!-- 图表使用内联 SVG 渲染，不依赖任何外部图表库 / CDN -->
 <style>
@@ -265,6 +272,7 @@ body{
 .btn:active{transform:scale(.97);}
 .btn-primary{background:var(--ink);color:#fff;}
 .btn-secondary{background:var(--line);color:var(--ink);}
+.btn-danger{background:#c05757;color:#fff;}
 .btn-sm{padding:7px 16px;font-size:12px;border-radius:9px;}
 .btn-block{display:block;width:100%;text-align:center;margin-top:10px;}
 .modal .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;}
@@ -636,7 +644,19 @@ async function syncNow(){
   try{
     const remote = await apiGet();
     let changed=false;
-    if(remote && remote.state){
+    const remoteResetAt = (remote && remote.resetAt) || 0;
+    const localResetAt = Number(localStorage.getItem('syncResetAt') || 0);
+    if(remoteResetAt > localResetAt){
+      // 其他设备发起过「清空全部数据」，本机也跟随清空
+      state = defaultState();
+      keyTs = {};
+      localStorage.setItem('syncResetAt', String(remoteResetAt));
+      localStorage.removeItem('syncSnap');
+      localStorage.removeItem('syncKeyTs');
+      save(true);
+      renderAll();
+      changed = true;
+    } else if(remote && remote.state){
       knownRev = remote.rev||0;
       for(const k of Object.keys(remote.state)){
         const rt=(remote.keyTs&&remote.keyTs[k])||0, lt=keyTs[k]||0;
@@ -720,8 +740,29 @@ function openSyncSettings(){
     <div class="sync-bar" style="margin-top:10px;">
       <button class="btn btn-sm" onclick="generateShareLink()">复制分享链接</button>
       <button class="btn btn-sm" onclick="importFromClipboard()">导入对方数据</button>
+    </div>
+    <div class="sync-bar" style="margin-top:12px;border-top:1px dashed var(--line);padding-top:12px;">
+      <button class="btn btn-sm btn-danger" onclick="clearAllData()">清空全部数据</button>
+      <span class="card-sub" style="margin:0;font-size:11px;">清本机 + 清云端，其他设备下次打开也会清空</span>
     </div>`;
   openModal(html);
+}
+function clearAllData(){
+  if(!confirm('确定清空全部数据？\n将删除本机与云端（房间 '+SYNC_ROOM+'）的所有记录，无法恢复。')) return;
+  const resetAt = Date.now();
+  localStorage.setItem('syncResetAt', String(resetAt));
+  // 推送到云端，使其他设备下次同步时也清空
+  try{
+    fetch(apiURL(), {method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({state:{}, keyTs:{}, resetAt})});
+  }catch(e){}
+  state = defaultState();
+  keyTs = {};
+  localStorage.removeItem('kaogong_v3');
+  localStorage.removeItem('syncSnap');
+  localStorage.removeItem('syncKeyTs');
+  closeModal();
+  showToast('已清空全部数据');
+  setTimeout(()=>location.reload(), 700);
 }
 function load(){
   const raw = localStorage.getItem('kaogong_v3');
@@ -1925,6 +1966,14 @@ function init(){
   testAndInitSync();
 }
 document.addEventListener('DOMContentLoaded',init);
+</script>
+<script>
+// 注册 Service Worker：让网页成为可安装的独立 App（打开后无浏览器地址栏）
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){/* 忽略注册失败 */});
+  });
+}
 </script>
 </body>
 </html>
