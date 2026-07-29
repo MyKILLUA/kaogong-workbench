@@ -1,0 +1,6 @@
+name = "kaogong-workbench"
+pages_build_output_dir = "."
+compatibility_date = "2024-09-23"
+# 说明：Cloudflare Pages 通过 Git 连接部署时，KV 绑定请在控制台手动添加：
+#   项目「设置 → Functions → KV 命名空间绑定」→ 变量名 SYNC_KV → 选择已创建的命名空间
+# （本文件仅声明构建输出目录，KV 绑定不在 wrangler.toml 中自动生效于 Pages Git 部署）
