@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: kaogong-workbench
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: "true"
+    startCommand: "node server.js"
+    healthCheckPath: /api/state
+    envVars:
+      - key: PORT
+        value: "3000"
