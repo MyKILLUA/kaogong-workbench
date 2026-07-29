@@ -778,7 +778,14 @@ function load(){
         if(!state.shared.keywords) state.shared.keywords=[];
         if(!state.personA) state.personA={};
         if(!state.personB) state.personB={};
-        if(!state.personA.bloodPressure) state.personA.bloodPressure={records:{}};
+        if(!state.personA.bloodPressure) state.personA.bloodPressure={readings:[]};
+        // 兼容旧数据：把按日期存储的 records 迁移为按「每次测量」存储的 readings 数组
+        if(state.personA.bloodPressure && !Array.isArray(state.personA.bloodPressure.readings)){
+          var oldRec = state.personA.bloodPressure.records || {};
+          state.personA.bloodPressure.readings = Object.keys(oldRec).sort().map(function(d){
+            return {ts: d+'T08:00:00', sys: oldRec[d].sys, dia: oldRec[d].dia};
+          });
+        }
         if(!state.personA.fitness) state.personA.fitness={records:{}};
         if(!state.personA.modules) state.personA.modules={};
         if(!state.personA.scores) state.personA.scores=[];
@@ -1126,18 +1133,16 @@ function renderBPModule(){
   if(currentView !== 'personA'){bpCard.style.display = 'none';return;}
   bpCard.style.display = 'block';
   const wrap = document.getElementById('bpChartWrap');
-  const recs = state.personA.bloodPressure.records;
-  // 按日期升序取出全部测量记录，横坐标统一为「检测次数」
-  const entries = Object.keys(recs).sort().map(d=>recs[d]);
-  if(!entries.length){
-    wrap.innerHTML = '<div class="empty-state" style="padding:14px 0;"><p style="font-size:12px;">还没有血压记录，每天测完点一下「记录」即可生成趋势图（横坐标为检测次数）。</p></div>';
+  const list = (state.personA.bloodPressure.readings || []).slice().sort(function(a,b){return a.ts < b.ts ? -1 : 1});
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty-state" style="padding:14px 0;"><p style="font-size:12px;">还没有血压记录，每次测完点一下「记录」即可生成趋势图（横坐标为检测次数，一天可记录多次）。</p></div>';
     return;
   }
-  const labels = entries.map((_,i)=>(''+(i+1)));   // 1,2,3… 第几次检测
-  const sysData = entries.map(e=>e.sys);            // 收缩压
-  const diaData = entries.map(e=>e.dia);            // 舒张压
+  const labels = list.map(function(_,i){return ''+(i+1);});   // 1,2,3… 第几次检测
+  const sysData = list.map(function(e){return e.sys;});        // 收缩压
+  const diaData = list.map(function(e){return e.dia;});        // 舒张压
   wrap.innerHTML = '<div class="chart-label">血压趋势（横坐标：检测次数）</div><div id="bpChart"></div>';
-  setTimeout(()=>{
+  setTimeout(function(){
     const el = document.getElementById('bpChart');
     if(!el) return;
     el.innerHTML = svgLineChart({
@@ -1154,8 +1159,8 @@ function addBP(){
   const sys = parseInt(document.getElementById('bpSys').value);
   const dia = parseInt(document.getElementById('bpDia').value);
   if(isNaN(sys)||isNaN(dia)||sys<60||sys>200||dia<40||dia>130){showToast('请输入有效的血压值');return;}
-  const today = todayStr();
-  state.personA.bloodPressure.records[today] = {sys,dia};
+  if(!Array.isArray(state.personA.bloodPressure.readings)) state.personA.bloodPressure.readings = [];
+  state.personA.bloodPressure.readings.push({ts:new Date().toISOString(), sys:sys, dia:dia});
   document.getElementById('bpSys').value = '';
   document.getElementById('bpDia').value = '';
   save();
