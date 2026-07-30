@@ -587,9 +587,9 @@ function defaultState(){
   const modA = {}, modB = {};
   MODULES.forEach(m=>{modA[m.id]=m.startCurrent||0; modB[m.id]=m.startCurrent||0;});
   return {
-    personA:{fitness:{records:{}},bloodPressure:{records:{}},modules:modA,customProgress:{},scores:[],wrongTopics:[]},
-    personB:{writing:{records:{},target:5000},modules:modB,customProgress:{},scores:[],wrongTopics:[]},
-    shared:{tasks:{},keywords:[],customModules:[],removedCustom:[]}
+    personA:{fitness:{records:{}},bloodPressure:{records:{}},modules:modA,customProgress:{},customModules:[],removedCustom:[],scores:[],wrongTopics:[]},
+    personB:{writing:{records:{},target:5000},modules:modB,customProgress:{},customModules:[],removedCustom:[],scores:[],wrongTopics:[]},
+    shared:{tasks:{},keywords:[]}
   };
 }
 
@@ -603,7 +603,7 @@ function curModules(){return curPerson().modules||{};}
 function curScores(){return curPerson().scores||[];}
 function curWrong(){return curPerson().wrongTopics||[];}
 function curKicker(){return currentView==='personA'?{cls:'a',name:'小硕咪'}:{cls:'b',name:'秋秋'};}
-function curCustomModules(){return state.shared.customModules||[];}
+function curCustomModules(){return curPerson().customModules||[];}
 function curCustomProgress(){return curPerson().customProgress||{};}
 
 // ============ 数据一次性重置 ============
@@ -831,8 +831,22 @@ function load(){
         if(!state.personB.wrongTopics) state.personB.wrongTopics=[];
         if(!state.personA.customProgress) state.personA.customProgress={};
         if(!state.personB.customProgress) state.personB.customProgress={};
-        if(!state.shared.customModules) state.shared.customModules=[];
-        if(!state.shared.removedCustom) state.shared.removedCustom=[];
+        if(!state.personA.customModules) state.personA.customModules=[];
+        if(!state.personA.removedCustom) state.personA.removedCustom=[];
+        if(!state.personB.customModules) state.personB.customModules=[];
+        if(!state.personB.removedCustom) state.personB.removedCustom=[];
+        // 迁移旧版：shared.customModules / removedCustom → 仅归属 personA（小硕咪），
+        // 秋秋不再共享显示，实现「各自生成各自的进度条」。
+        if(Array.isArray(state.shared.customModules) && state.shared.customModules.length){
+          if(!state.personA.customModules.length){
+            state.personA.customModules = state.shared.customModules.slice();
+          }
+          if(!state.personA.removedCustom.length && Array.isArray(state.shared.removedCustom)){
+            state.personA.removedCustom = state.shared.removedCustom.slice();
+          }
+        }
+        delete state.shared.customModules;
+        delete state.shared.removedCustom;
         MODULES.forEach(m=>{
           if(typeof state.personA.modules[m.id]==='undefined') state.personA.modules[m.id]=m.startCurrent||0;
           if(typeof state.personB.modules[m.id]==='undefined') state.personB.modules[m.id]=m.startCurrent||0;
@@ -1388,11 +1402,11 @@ function renderModules(){
       </div>
     </div>`;
   }).join('');
-  // —— 自定义进度条（定义共享、进度各自记录）——
-  const removed = new Set(state.shared.removedCustom||[]);
+  // —— 自定义进度条（仅当前身份可见，各自独立定义与进度）——
+  const removed = new Set(curPerson().removedCustom||[]);
   const customs = curCustomModules().filter(c=>!removed.has(c.id));
   if(customs.length){
-    html += '<div class="module-section-title">自定义进度条（两人共享定义 · 进度各自记录）</div>';
+    html += '<div class="module-section-title">自定义进度条（仅本人可见 · 各自独立）</div>';
     html += customs.map(c=>{
       const prog = curCustomProgress();
       const cur = prog[c.id]||0;
@@ -1435,7 +1449,7 @@ function studyOnce(id){
 function openAddCustom(){
   const html = `
     <h3 style="margin:0 0 6px;color:var(--warm);">添加自定义进度条</h3>
-    <p class="card-sub" style="margin:0 0 14px;">填写下列信息即可生成与默认模块一致的进度条。定义两人共享、进度各自记录。</p>
+    <p class="card-sub" style="margin:0 0 14px;">填写下列信息即可生成与默认模块一致的进度条。该进度条仅当前身份（小硕咪 / 秋秋）可见，两人各自独立定义与记录进度。</p>
     <label class="form-label">学习内容（名称）<span style="color:var(--danger)">*</span></label>
     <input id="cmName" class="form-input" placeholder="如：申论大作文精练" maxlength="20">
     <label class="form-label" style="margin-top:12px;">教师</label>
@@ -1466,24 +1480,24 @@ function saveCustomModule(){
   if(isNaN(step) || step<1) step = 1;
   const id = 'c'+Date.now();
   const colors = ['#B07D52','#7E97B3','#8BAE7C','#C4A46B','#A487AE','#7FB0A1','#C2917F','#5E9C8B'];
-  const color = colors[(state.shared.customModules?state.shared.customModules.length:0)%colors.length];
-  if(!state.shared.customModules) state.shared.customModules = [];
-  if(!state.shared.removedCustom) state.shared.removedCustom = [];
-  if(!state.personA.customProgress) state.personA.customProgress = {};
-  if(!state.personB.customProgress) state.personB.customProgress = {};
-  state.shared.customModules.push({id,name,teacher,method,time,total,step,color});
-  state.personA.customProgress[id] = 0;
-  state.personB.customProgress[id] = 0;
+  const p = curPerson();
+  const list = p.customModules||[];
+  const color = colors[list.length%colors.length];
+  if(!p.customModules) p.customModules = [];
+  if(!p.removedCustom) p.removedCustom = [];
+  if(!p.customProgress) p.customProgress = {};
+  p.customModules.push({id,name,teacher,method,time,total,step,color});
+  p.customProgress[id] = 0;
   save();
   closeModal();
   renderModules();
   showToast('已添加自定义进度条：'+name);
 }
 function studyCustom(id){
-  if(!state.shared.customModules) return;
-  const c = state.shared.customModules.find(x=>x.id===id);
-  if(!c) return;
   const p = curPerson();
+  if(!p.customModules) return;
+  const c = p.customModules.find(x=>x.id===id);
+  if(!c) return;
   if(!p.customProgress) p.customProgress = {};
   const prog = p.customProgress;
   const cur = prog[id]||0;
@@ -1495,12 +1509,13 @@ function studyCustom(id){
   showToast(c.name + ' 进度 +' + (c.step||1) + '（' + prog[id] + '/' + c.total + ' · ' + pct + '%）');
 }
 function delCustomModule(id){
-  if(!confirm('确定删除该自定义进度条？两人的进度都会一并删除（不可恢复）。')) return;
-  state.shared.customModules = (state.shared.customModules||[]).filter(x=>x.id!==id);
-  if(!state.shared.removedCustom) state.shared.removedCustom = [];
-  if(!state.shared.removedCustom.includes(id)) state.shared.removedCustom.push(id);
-  if(state.personA.customProgress) delete state.personA.customProgress[id];
-  if(state.personB.customProgress) delete state.personB.customProgress[id];
+  if(!confirm('确定删除该自定义进度条？仅当前身份（'+curKicker().name+'）的进度会删除，另一人不受影响（不可恢复）。')) return;
+  const p = curPerson();
+  if(!p.customModules) p.customModules = [];
+  if(!p.removedCustom) p.removedCustom = [];
+  p.customModules = p.customModules.filter(x=>x.id!==id);
+  if(!p.removedCustom.includes(id)) p.removedCustom.push(id);
+  if(p.customProgress) delete p.customProgress[id];
   save();
   renderModules();
   showToast('已删除自定义进度条');
