@@ -167,6 +167,9 @@ body{
 .module-bar-fill{height:100%;border-radius:20px;transition:width .45s ease;}
 .module-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;color:var(--text2);gap:8px;}
 .module-pct{font-weight:600;white-space:nowrap;}
+.module-del{position:absolute;top:8px;right:8px;z-index:2;width:22px;height:22px;border-radius:50%;border:none;background:var(--line-soft);color:var(--text3);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.module-del:hover{background:#E6C3C3;color:var(--danger);}
+.module-section-title{font-size:12px;color:var(--text3);letter-spacing:1px;margin:14px 2px 2px;font-weight:600;}
 
 /* 新闻 */
 .news-item{padding:12px 14px;border-radius:var(--radius-sm);background:var(--bg);margin-bottom:7px;cursor:pointer;transition:all .15s;border:1px solid transparent;}
@@ -431,8 +434,11 @@ body{
   <!-- 科目（模块进度条，按当前查看者独立） -->
   <div class="page" id="page-subjects">
     <div class="card" style="margin-bottom:12px;">
-      <div class="card-head" style="margin-bottom:8px;"><span class="card-kicker" id="subjKicker">小硕咪</span><h3>科目学习进度</h3></div>
-      <p class="card-sub" style="text-align:left;">每天学完点一下对应模块，进度 +1（各自独立记录）。</p>
+      <div class="card-head" style="justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;"><span class="card-kicker" id="subjKicker">小硕咪</span><h3>科目学习进度</h3></div>
+        <button class="btn btn-sm btn-primary" onclick="openAddCustom()">+ 自定义进度条</button>
+      </div>
+      <p class="card-sub" style="text-align:left;">每天学完点一下对应模块，进度增加（默认模块各自独立；自定义进度条定义两人共享、进度各自记录）。</p>
     </div>
     <div class="module-list" id="moduleList"></div>
   </div>
@@ -581,9 +587,9 @@ function defaultState(){
   const modA = {}, modB = {};
   MODULES.forEach(m=>{modA[m.id]=m.startCurrent||0; modB[m.id]=m.startCurrent||0;});
   return {
-    personA:{fitness:{records:{}},bloodPressure:{records:{}},modules:modA,scores:[],wrongTopics:[]},
-    personB:{writing:{records:{},target:5000},modules:modB,scores:[],wrongTopics:[]},
-    shared:{tasks:{},keywords:[]}
+    personA:{fitness:{records:{}},bloodPressure:{records:{}},modules:modA,customProgress:{},scores:[],wrongTopics:[]},
+    personB:{writing:{records:{},target:5000},modules:modB,customProgress:{},scores:[],wrongTopics:[]},
+    shared:{tasks:{},keywords:[],customModules:[],removedCustom:[]}
   };
 }
 
@@ -597,6 +603,8 @@ function curModules(){return curPerson().modules||{};}
 function curScores(){return curPerson().scores||[];}
 function curWrong(){return curPerson().wrongTopics||[];}
 function curKicker(){return currentView==='personA'?{cls:'a',name:'小硕咪'}:{cls:'b',name:'秋秋'};}
+function curCustomModules(){return state.shared.customModules||[];}
+function curCustomProgress(){return curPerson().customProgress||{};}
 
 // ============ 数据一次性重置 ============
 // 升级此版本号即可触发「指定数据归零」（用于用户测试后清空）。
@@ -821,6 +829,10 @@ function load(){
         if(!state.personB.modules) state.personB.modules={};
         if(!state.personB.scores) state.personB.scores=[];
         if(!state.personB.wrongTopics) state.personB.wrongTopics=[];
+        if(!state.personA.customProgress) state.personA.customProgress={};
+        if(!state.personB.customProgress) state.personB.customProgress={};
+        if(!state.shared.customModules) state.shared.customModules=[];
+        if(!state.shared.removedCustom) state.shared.removedCustom=[];
         MODULES.forEach(m=>{
           if(typeof state.personA.modules[m.id]==='undefined') state.personA.modules[m.id]=m.startCurrent||0;
           if(typeof state.personB.modules[m.id]==='undefined') state.personB.modules[m.id]=m.startCurrent||0;
@@ -1355,7 +1367,7 @@ function renderModules(){
   const kEl = document.getElementById('subjKicker');
   if(kEl){kEl.textContent=k.name;kEl.className='card-kicker '+k.cls;}
   const list = document.getElementById('moduleList');
-  list.innerHTML = MODULES.map(m=>{
+  let html = MODULES.map(m=>{
     const cur = curModules()[m.id] || 0;
     const pct = Math.round(Math.min(cur/m.total,1)*100);
     const done = cur >= m.total;
@@ -1376,6 +1388,37 @@ function renderModules(){
       </div>
     </div>`;
   }).join('');
+  // —— 自定义进度条（定义共享、进度各自记录）——
+  const removed = new Set(state.shared.removedCustom||[]);
+  const customs = curCustomModules().filter(c=>!removed.has(c.id));
+  if(customs.length){
+    html += '<div class="module-section-title">自定义进度条（两人共享定义 · 进度各自记录）</div>';
+    html += customs.map(c=>{
+      const prog = curCustomProgress();
+      const cur = prog[c.id]||0;
+      const pct = Math.round(Math.min(cur/c.total,1)*100);
+      const done = cur >= c.total;
+      const color = c.color || '#B07D52';
+      const meta = [c.teacher, c.method, c.time].filter(Boolean).join(' · ');
+      return `<div class="module-card ${done?'done':''}" style="border-left-color:${color}" onclick="studyCustom('${c.id}')">
+        <div class="module-fill" style="width:${pct}%;background:${done?'rgba(91,140,90,.12)':color+'1A'}"></div>
+        <button class="module-del" onclick="event.stopPropagation();delCustomModule('${c.id}')" title="删除该自定义进度条">✕</button>
+        <div class="module-content">
+          <div class="module-top">
+            <div class="module-name">${c.name}</div>
+            ${done?'<span class="module-done-badge">✓ 已完成</span>':'<span class="module-group">自定义</span>'}
+          </div>
+          ${meta?'<div class="module-teacher">'+meta+'</div>':''}
+          <div class="module-bar"><div class="module-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+          <div class="module-meta">
+            <span>每次 +${c.step} · 总量 ${c.total}</span>
+            <span class="module-pct" style="color:${done?'var(--success)':color}">${cur}/${c.total} · ${pct}%</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  list.innerHTML = html;
 }
 function studyOnce(id){
   const m = MODULES.find(x=>x.id===id);
@@ -1386,6 +1429,81 @@ function studyOnce(id){
   renderModules();
   const pct = Math.round(Math.min((cur+1)/m.total,1)*100);
   showToast(m.name + ' 进度 +1（' + (cur+1) + '/' + m.total + ' · ' + pct + '%）');
+}
+
+// --- 自定义进度条（用户自行添加；定义共享、进度按人独立） ---
+function openAddCustom(){
+  const html = `
+    <h3 style="margin:0 0 6px;color:var(--warm);">添加自定义进度条</h3>
+    <p class="card-sub" style="margin:0 0 14px;">填写下列信息即可生成与默认模块一致的进度条。定义两人共享、进度各自记录。</p>
+    <label class="form-label">学习内容（名称）<span style="color:var(--danger)">*</span></label>
+    <input id="cmName" class="form-input" placeholder="如：申论大作文精练" maxlength="20">
+    <label class="form-label" style="margin-top:12px;">教师</label>
+    <input id="cmTeacher" class="form-input" placeholder="如：袁东" maxlength="20">
+    <label class="form-label" style="margin-top:12px;">学习方式</label>
+    <input id="cmMethod" class="form-input" placeholder="如：精做精析 + 对照范文" maxlength="30">
+    <label class="form-label" style="margin-top:12px;">学习时间</label>
+    <input id="cmTime" class="form-input" placeholder="如：20:40-21:00" maxlength="20">
+    <label class="form-label" style="margin-top:12px;">学习总量（目标总数）<span style="color:var(--danger)">*</span></label>
+    <input id="cmTotal" class="form-input" type="number" min="1" placeholder="如：30">
+    <label class="form-label" style="margin-top:12px;">每次点击完成量（每日内容，默认 1）</label>
+    <input id="cmStep" class="form-input" type="number" min="1" value="1" placeholder="点击一次算完成几组">
+    <div class="sync-bar" style="margin-top:18px;">
+      <button class="btn btn-sm btn-primary" onclick="saveCustomModule()">生成进度条</button>
+      <button class="btn btn-sm btn-secondary" onclick="closeModal()">取消</button>
+    </div>`;
+  openModal(html);
+}
+function saveCustomModule(){
+  const name = (document.getElementById('cmName').value||'').trim();
+  const teacher = (document.getElementById('cmTeacher').value||'').trim();
+  const method = (document.getElementById('cmMethod').value||'').trim();
+  const time = (document.getElementById('cmTime').value||'').trim();
+  const total = parseInt(document.getElementById('cmTotal').value,10);
+  let step = parseInt(document.getElementById('cmStep').value,10);
+  if(!name){ showToast('请填写学习内容（名称）'); return; }
+  if(isNaN(total) || total<=0){ showToast('请填写有效的学习总量（大于0）'); return; }
+  if(isNaN(step) || step<1) step = 1;
+  const id = 'c'+Date.now();
+  const colors = ['#B07D52','#7E97B3','#8BAE7C','#C4A46B','#A487AE','#7FB0A1','#C2917F','#5E9C8B'];
+  const color = colors[(state.shared.customModules?state.shared.customModules.length:0)%colors.length];
+  if(!state.shared.customModules) state.shared.customModules = [];
+  if(!state.shared.removedCustom) state.shared.removedCustom = [];
+  if(!state.personA.customProgress) state.personA.customProgress = {};
+  if(!state.personB.customProgress) state.personB.customProgress = {};
+  state.shared.customModules.push({id,name,teacher,method,time,total,step,color});
+  state.personA.customProgress[id] = 0;
+  state.personB.customProgress[id] = 0;
+  save();
+  closeModal();
+  renderModules();
+  showToast('已添加自定义进度条：'+name);
+}
+function studyCustom(id){
+  if(!state.shared.customModules) return;
+  const c = state.shared.customModules.find(x=>x.id===id);
+  if(!c) return;
+  const p = curPerson();
+  if(!p.customProgress) p.customProgress = {};
+  const prog = p.customProgress;
+  const cur = prog[id]||0;
+  if(cur >= c.total){ showToast(c.name + ' 已完成（' + c.total + '），温故即可'); return; }
+  prog[id] = Math.min(cur + (c.step||1), c.total);
+  save();
+  renderModules();
+  const pct = Math.round(Math.min(prog[id]/c.total,1)*100);
+  showToast(c.name + ' 进度 +' + (c.step||1) + '（' + prog[id] + '/' + c.total + ' · ' + pct + '%）');
+}
+function delCustomModule(id){
+  if(!confirm('确定删除该自定义进度条？两人的进度都会一并删除（不可恢复）。')) return;
+  state.shared.customModules = (state.shared.customModules||[]).filter(x=>x.id!==id);
+  if(!state.shared.removedCustom) state.shared.removedCustom = [];
+  if(!state.shared.removedCustom.includes(id)) state.shared.removedCustom.push(id);
+  if(state.personA.customProgress) delete state.personA.customProgress[id];
+  if(state.personB.customProgress) delete state.personB.customProgress[id];
+  save();
+  renderModules();
+  showToast('已删除自定义进度条');
 }
 
 // --- 统计（按当前查看者独立） ---
