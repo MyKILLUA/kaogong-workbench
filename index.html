@@ -620,6 +620,31 @@ function save(silent){
 }
 function snapshotNow(){ const o={}; for(const k of Object.keys(state)) o[k]=JSON.stringify(state[k]); return o; }
 
+// 只允许这三个顶层字段参与云同步，避免 __resetV 等控制字段被同步覆盖引发二次归零
+const SYNC_KEYS = ['shared','personA','personB'];
+
+// 深合并：本地独有的子数据（血压/科目进度/模考/错题等）一律保留，
+// 远端独有的加进来，两边都有的按 id/ts 去重合并（不再是整块替换，避免互相冲掉）。
+function deepMerge(local, remote){
+  if(remote === undefined || remote === null) return local;
+  if(Array.isArray(remote)){
+    if(!Array.isArray(local)) return remote.slice();
+    const keyOf = x => (x && (x.id !== undefined ? x.id : (x.ts !== undefined ? x.ts : JSON.stringify(x))));
+    const map = new Map();
+    local.forEach(it => map.set(keyOf(it), it));
+    remote.forEach(it => map.set(keyOf(it), it)); // 远端覆盖同 key 项
+    return Array.from(map.values());
+  }
+  if(remote && typeof remote === 'object'){
+    if(!local || typeof local !== 'object' || Array.isArray(local)) local = {};
+    for(const k of Object.keys(remote)){
+      local[k] = deepMerge(local[k], remote[k]);
+    }
+    return local;
+  }
+  return remote; // 标量：远端覆盖
+}
+
 // ============ 云同步（跨设备共享）============
 // 后端为同目录 server.js（/api/state），或任意兼容后端（通过 ?backend= 或界面设置）。
 // 同步策略：顶层字段级合并（keyTs 较大者胜），避免两人/两设备互相覆盖。
@@ -660,9 +685,10 @@ async function syncNow(){
       changed = true;
     } else if(remote && remote.state){
       knownRev = remote.rev||0;
-      for(const k of Object.keys(remote.state)){
+      for(const k of SYNC_KEYS){
+        if(!(k in remote.state)) continue;
         const rt=(remote.keyTs&&remote.keyTs[k])||0, lt=keyTs[k]||0;
-        if(rt>lt){ state[k]=remote.state[k]; keyTs[k]=rt; changed=true; }
+        if(rt>lt){ state[k]=deepMerge(state[k], remote.state[k]); keyTs[k]=rt; changed=true; }
       }
     }
     if(changed){
