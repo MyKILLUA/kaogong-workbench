@@ -1,0 +1,2167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#F6F5F3">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="考公台">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-512.png">
+<title>小硕咪 & 秋秋 · 考公学习工作台</title>
+<!-- 图表使用内联 SVG 渲染，不依赖任何外部图表库 / CDN -->
+<style>
+/* ============ 极简优雅主题 ============ */
+:root{
+  --bg:#F6F5F3;
+  --card:#FFFFFF;
+  --ink:#232323;
+  --text2:#6E6E6E;
+  --text3:#A6A6A6;
+  --line:#ECEAE7;
+  --line-soft:#F2F1EF;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+  --radius:12px;
+  --radius-sm:8px;
+  --warm:#B07D52;      /* 小硕咪 · 暖铜 */
+  --cool:#4F5B66;      /* 秋秋 · 石墨 */
+  --success:#5B8C5A;
+  --danger:#C05757;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  background:var(--bg);color:var(--ink);min-height:100vh;
+  display:flex;justify-content:center;padding-bottom:84px;
+  -webkit-font-smoothing:antialiased;
+}
+.container{width:100%;max-width:520px;position:relative;z-index:1;padding:0 14px;}
+
+/* 头部 */
+.header{
+  background:var(--card);border-bottom:1px solid var(--line);
+  padding:calc(18px + env(safe-area-inset-top,0px)) 18px 14px;position:sticky;top:0;z-index:100;text-align:center;
+}
+/* 独立 App（添加到主屏幕）模式下，补偿顶部状态栏安全区，避免标题被状态栏遮挡 */
+.standalone .header{padding-top:max(30px, calc(18px + env(safe-area-inset-top,0px)));}
+.header-title{font-size:17px;font-weight:600;color:var(--ink);letter-spacing:2px;}
+.header-sub{font-size:11px;color:var(--text3);letter-spacing:3px;margin-top:2px;}
+
+/* 身份切换 */
+.switch-bar{display:flex;gap:8px;justify-content:center;margin-top:14px;}
+.switch-btn{
+  flex:1;max-width:150px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);
+  transition:all .2s;letter-spacing:1px;
+}
+.switch-btn.active{border-color:var(--ink);color:var(--ink);font-weight:600;background:#FAFAFA;}
+.switch-btn .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+.switch-btn .dot.a{background:var(--warm);}
+.switch-btn .dot.b{background:var(--cool);}
+
+/* 内容 */
+.page{display:none;padding-top:14px;}
+.page.active{display:block;animation:fade .25s ease;}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* 卡片 */
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;margin-bottom:12px;position:relative;
+}
+.card-head{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+.card-kicker{font-size:11px;font-weight:600;letter-spacing:2px;padding:2px 8px;border-radius:20px;background:var(--line-soft);color:var(--text2);}
+.card-kicker.a{color:var(--warm);background:rgba(176,125,82,.10);}
+.card-kicker.b{color:var(--cool);background:rgba(79,91,102,.10);}
+.card-head h3{font-size:15px;font-weight:600;color:var(--ink);letter-spacing:1px;}
+.card-sub{font-size:12px;color:var(--text3);margin-top:6px;letter-spacing:.5px;}
+
+/* 倒计时 */
+.countdown-row{display:flex;gap:10px;flex-wrap:wrap;}
+.countdown-item{
+  flex:1;min-width:calc(50% - 5px);background:var(--bg);border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:14px;text-align:center;
+}
+.countdown-item.urgent{border-color:rgba(192,87,87,.4);background:rgba(192,87,87,.04);}
+.countdown-name{font-size:12px;color:var(--text2);font-weight:500;letter-spacing:1px;}
+.countdown-days{font-size:30px;font-weight:300;color:var(--ink);line-height:1.2;margin-top:4px;}
+.countdown-days span{font-size:12px;color:var(--text3);font-weight:400;}
+.countdown-target{font-size:11px;color:var(--text3);margin-top:4px;letter-spacing:.5px;}
+
+/* 个人打卡 */
+.big-count{font-size:38px;font-weight:300;line-height:1;text-align:center;}
+.big-count span{font-size:13px;color:var(--text3);font-weight:400;margin-left:4px;}
+.input-row{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:14px;}
+.mini-input{
+  padding:9px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;
+  text-align:center;color:var(--ink);background:var(--bg);width:130px;outline:none;
+}
+.mini-input:focus{border-color:var(--cool);}
+.pill-btn{
+  padding:9px 22px;border-radius:10px;border:none;font-size:14px;font-weight:500;
+  cursor:pointer;transition:all .15s;letter-spacing:1px;color:#fff;
+}
+.pill-btn:active{transform:scale(.97);}
+.pill-btn.warm{background:var(--warm);}
+.pill-btn.cool{background:var(--cool);}
+.pill-btn.warm:disabled{background:#D8C4B0;cursor:default;}
+
+.mini-stats{display:flex;justify-content:space-around;text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
+.mini-stats div b{display:block;font-size:20px;font-weight:400;color:var(--ink);}
+.mini-stats div span{font-size:11px;color:var(--text3);letter-spacing:.5px;}
+.rec-list{margin-top:12px;}
+.rec-list .rec-head{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px;letter-spacing:.5px;}
+.rec-row{display:flex;justify-content:space-between;padding:7px 10px;background:var(--bg);border-radius:7px;margin-bottom:4px;font-size:12px;color:var(--text2);}
+.rec-row span:last-child{font-weight:500;color:var(--ink);}
+
+/* 图表 */
+.chart-box{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
+.chart-label{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px;letter-spacing:.5px;}
+.chart-box canvas{width:100%!important;height:200px!important;display:block;}
+
+/* 血压 */
+.bp-inputs{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;}
+.bp-inputs input{width:72px;padding:9px 8px;border-radius:10px;border:1px solid var(--line);font-size:14px;text-align:center;color:var(--ink);background:var(--bg);outline:none;}
+.bp-inputs input:focus{border-color:var(--warm);}
+.bp-inputs .bp-label{font-size:12px;color:var(--text3);}
+.bp-inputs .bp-sep{font-size:18px;color:var(--text3);}
+
+/* 任务 */
+.task-list{list-style:none;}
+.task-item{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-radius:var(--radius-sm);margin-bottom:7px;background:var(--bg);
+  cursor:pointer;transition:all .15s;border:1px solid transparent;
+}
+.task-item:active{transform:scale(.99);}
+.task-item.done{opacity:.5;}
+.task-item.done .task-text{text-decoration:line-through;}
+.task-checkbox{
+  width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-size:12px;color:transparent;
+}
+.task-item.done .task-checkbox{background:var(--ink);border-color:var(--ink);color:#fff;}
+.task-text{flex:1;font-size:13px;color:var(--ink);line-height:1.4;}
+.task-time{font-size:11px;color:var(--text3);white-space:nowrap;}
+.task-tag{padding:2px 9px;border-radius:20px;font-size:11px;color:#fff;font-weight:500;white-space:nowrap;letter-spacing:.5px;}
+
+/* 模块（科目页进度条） */
+.module-list{display:flex;flex-direction:column;gap:10px;}
+.module-card{
+  position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:15px 16px;cursor:pointer;transition:all .2s;border-left:3px solid var(--warm);
+}
+.module-card:active{transform:scale(.99);}
+.module-card.done{border-color:var(--success);}
+.module-fill{position:absolute;left:0;top:0;bottom:0;width:0;z-index:0;transition:width .45s ease;background:rgba(0,0,0,0);}
+.module-content{position:relative;z-index:1;}
+.module-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.module-name{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:.5px;}
+.module-group{font-size:10px;color:var(--text3);padding:2px 8px;border-radius:20px;background:var(--line-soft);white-space:nowrap;}
+.module-done-badge{font-size:12px;color:var(--success);font-weight:600;white-space:nowrap;}
+.module-teacher{font-size:11px;color:var(--text3);margin:5px 0 11px;}
+.module-bar{height:7px;background:var(--line-soft);border-radius:20px;overflow:hidden;}
+.module-bar-fill{height:100%;border-radius:20px;transition:width .45s ease;}
+.module-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;color:var(--text2);gap:8px;}
+.module-pct{font-weight:600;white-space:nowrap;}
+.module-del{position:absolute;top:8px;right:8px;z-index:2;width:22px;height:22px;border-radius:50%;border:none;background:var(--line-soft);color:var(--text3);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.module-del:hover{background:#E6C3C3;color:var(--danger);}
+.module-section-title{font-size:12px;color:var(--text3);letter-spacing:1px;margin:14px 2px 2px;font-weight:600;}
+
+/* 新闻 */
+.news-item{padding:12px 14px;border-radius:var(--radius-sm);background:var(--bg);margin-bottom:7px;cursor:pointer;transition:all .15s;border:1px solid transparent;}
+.news-item:active{background:#EFEEEC;}
+.news-item .news-title{font-size:13px;color:var(--ink);line-height:1.55;margin-bottom:6px;}
+.news-item .news-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.news-item .news-source{font-size:11px;color:var(--text3);}
+.news-tag{font-size:10px;padding:1px 8px;border-radius:20px;color:#fff;font-weight:500;letter-spacing:.5px;}
+/* 考试相关标签（描边小标） */
+.news-exam{font-size:10px;padding:1px 7px;border-radius:20px;margin-left:5px;font-weight:600;border:1px solid;background:rgba(255,255,255,.6);}
+.news-exam.国考{color:#C05757;border-color:#C05757;}
+.news-exam.广东省考{color:#5B8C5A;border-color:#5B8C5A;}
+.news-exam.湖北省考{color:#7E97B3;border-color:#7E97B3;}
+.push-status{font-size:12px;color:var(--text3);align-self:center;}
+/* 关键词学习 */
+.kw-card{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;background:var(--card-2);}
+.kw-word{font-weight:700;color:var(--warm);font-size:15px;}
+.kw-section{font-size:11px;color:var(--text3);margin-top:9px;letter-spacing:1px;}
+.kw-text{font-size:13px;line-height:1.65;color:var(--text1);white-space:pre-wrap;word-break:break-word;}
+.kw-actions{display:flex;gap:8px;}
+.kw-btn{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:1;padding:6px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--text2);cursor:pointer;transition:all .18s;font-family:inherit;}
+.kw-btn:hover{background:var(--line-soft);color:var(--ink);}
+.kw-btn:active{transform:scale(.96);}
+.kw-btn--edit{color:var(--warm);border-color:rgba(176,125,82,.4);}
+.kw-btn--edit:hover{background:rgba(176,125,82,.10);color:var(--warm);border-color:rgba(176,125,82,.6);}
+.kw-btn--del{color:var(--danger);border-color:rgba(192,87,87,.4);}
+.kw-btn--del:hover{background:rgba(192,87,87,.10);color:var(--danger);border-color:rgba(192,87,87,.6);}
+.kw-btn--sm{padding:4px 10px;font-size:11px;}
+/* 申论素材库 · 相关新闻 */
+.kw-news{font-size:12px;line-height:1.65;margin-top:4px;word-break:break-word;}
+.kw-news a{color:var(--cool);text-decoration:none;}
+.kw-news a:hover{text-decoration:underline;}
+.kw-news-row{display:flex;align-items:center;gap:8px;margin-top:7px;}
+.kw-news-title{font-size:12px;color:var(--cool);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+/* 弹窗表单 */
+.form-label{display:block;font-size:12px;color:var(--text3);margin-bottom:5px;letter-spacing:.5px;}
+.form-input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:14px;font-family:inherit;background:var(--card-2);color:var(--text1);}
+
+/* 新闻摘要 / 新闻页 */
+.news-summary{font-size:12px;color:var(--text2);line-height:1.65;margin-top:8px;-webkit-line-clamp:3;line-clamp:3;-webkit-box-orient:vertical;display:-webkit-box;overflow:hidden;transition:all .2s;}
+.news-summary.expanded{-webkit-line-clamp:unset;line-clamp:unset;display:block;overflow:auto;max-height:18em;}
+.news-read{display:inline-block;margin-top:10px;font-size:11px;color:var(--cool);font-weight:500;cursor:pointer;text-decoration:none;}
+.news-filter{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+.news-filter .nf{padding:6px 13px;border-radius:20px;font-size:12px;background:var(--line-soft);color:var(--text2);cursor:pointer;border:none;transition:all .15s;letter-spacing:.5px;}
+.news-filter .nf.active{background:var(--ink);color:#fff;}
+.news-head-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;}
+.news-update{font-size:11px;color:var(--text3);white-space:nowrap;}
+.score-cap{font-size:12px;color:var(--text3);margin-top:10px;text-align:center;letter-spacing:.5px;}
+.svg-legend{display:flex;flex-wrap:wrap;gap:9px 16px;justify-content:center;margin-top:10px;}
+.svg-legend .lg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);}
+.svg-legend .lg i{width:15px;height:3px;border-radius:2px;display:inline-block;}
+
+/* 成绩 */
+.score-pass{color:var(--success);font-weight:500;}
+.score-fail{color:var(--danger);font-weight:500;}
+.log-item{padding:11px 13px;border-radius:var(--radius-sm);background:var(--bg);margin-bottom:7px;}
+.log-item .log-head{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;letter-spacing:.5px;}
+.log-item .log-body{font-size:13px;color:var(--ink);line-height:1.5;}
+
+/* 错题知识点（标签矩阵） */
+.wrong-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.wrong-tag{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:20px;
+  font-size:13px;color:#fff;cursor:pointer;transition:all .15s;font-weight:500;letter-spacing:.5px;border:none;line-height:1;
+}
+.wrong-tag:active{transform:scale(.94);}
+.wrong-tag .wt-count{font-size:11px;background:rgba(255,255,255,.30);padding:1px 7px;border-radius:20px;font-weight:600;}
+.wrong-add{background:var(--line-soft);color:var(--text2);border:1px dashed var(--line);font-weight:400;}
+.score-chart{margin-top:8px;}
+.score-chart canvas{width:100%!important;height:200px!important;display:block;}
+
+/* 课表 */
+.sched-title{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:1px;margin-top:14px;}
+.sched-title:first-of-type{margin-top:0;}
+.sched-table{width:100%;border-collapse:collapse;}
+.sched-table tr{border-bottom:1px solid var(--line-soft);}
+.sched-table tr:last-child{border-bottom:none;}
+.sched-table td{padding:9px 6px;vertical-align:middle;}
+.sched-time{font-size:11px;color:var(--text3);white-space:nowrap;width:76px;}
+.sched-note{font-size:11px;color:var(--text2);}
+.chip{display:inline-block;padding:3px 9px;border-radius:6px;color:#fff;font-size:10px;letter-spacing:.5px;}
+
+/* 阶段条 */
+.phase-track{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.phase-track span{padding:5px 12px;border-radius:20px;font-size:11px;background:var(--line-soft);color:var(--text3);letter-spacing:.5px;}
+.phase-track span.active{background:var(--ink);color:#fff;}
+.phase-track span.past{background:var(--line);color:var(--text2);}
+.phase-block{flex:1;min-width:45%;padding:12px;border-radius:var(--radius-sm);text-align:center;font-size:12px;background:var(--line-soft);color:var(--text3);}
+.phase-block.active{background:var(--ink);color:#fff;}
+.phase-block.past{background:var(--line);color:var(--text2);}
+.phase-block b{display:block;font-weight:600;margin-bottom:4px;letter-spacing:.5px;}
+.phase-block .pb-time{font-size:10px;opacity:.75;}
+.overall-bar{height:8px;background:var(--line-soft);border-radius:20px;overflow:hidden;margin-top:12px;}
+.overall-bar-fill{height:100%;background:var(--warm);border-radius:20px;transition:width .4s;}
+
+/* 弹窗 */
+.modal-overlay{position:fixed;inset:0;background:rgba(35,35,35,.45);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--card);border-radius:var(--radius);padding:22px;width:90%;max-width:400px;max-height:80vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.18);}
+.modal h3{font-size:16px;color:var(--ink);margin-bottom:16px;text-align:center;font-weight:600;letter-spacing:1px;}
+.modal input,.modal select,.modal textarea{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line);font-size:14px;margin-bottom:10px;background:var(--bg);color:var(--ink);font-family:inherit;outline:none;}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--ink);}
+.modal textarea{resize:vertical;min-height:64px;}
+.btn{display:inline-block;padding:11px 22px;border-radius:10px;border:none;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;letter-spacing:1px;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-secondary{background:var(--line);color:var(--ink);}
+.btn-danger{background:#c05757;color:#fff;}
+.btn-sm{padding:7px 16px;font-size:12px;border-radius:9px;}
+.btn-block{display:block;width:100%;text-align:center;margin-top:10px;}
+.modal .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;}
+
+/* 底部导航 */
+.bottom-nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;padding:9px 0 calc(9px + env(safe-area-inset-bottom));z-index:100;
+}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 10px;cursor:pointer;color:var(--text3);font-size:11px;font-weight:400;letter-spacing:1px;border:none;background:none;transition:color .2s;}
+.nav-item .nav-icon{font-size:20px;transition:all .2s;filter:grayscale(.3);}
+.nav-item.active{color:var(--ink);}
+.nav-item.active .nav-icon{filter:none;transform:scale(1.1);}
+
+/* 提示 */
+.toast{position:fixed;top:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 26px;border-radius:24px;font-size:13px;font-weight:400;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;letter-spacing:.5px;}
+.toast.show{opacity:1;}
+
+/* 同步 */
+.sync-bar{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+.sync-status{text-align:center;font-size:12px;margin:2px 0 12px;padding:8px 10px;border-radius:10px;letter-spacing:.3px;}
+.sync-status.ok{background:rgba(91,140,90,.14);color:#4f7a4e;}
+.sync-status.off{background:var(--line-soft);color:var(--text3);}
+.sync-config{display:flex;flex-direction:column;gap:10px;}
+.sync-config .form-input{width:100%;}
+.sync-bar .btn{font-size:12px;padding:9px 18px;letter-spacing:.5px;}
+/* 同步状态徽标 + 设置入口 */
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.gear-btn{background:var(--line-soft);border:1px solid var(--line);color:var(--text3);width:34px;height:34px;border-radius:10px;font-size:16px;cursor:pointer;flex:none;transition:.15s;}
+.gear-btn:hover{background:var(--warm);color:#fff;border-color:var(--warm);}
+.sync-badge{font-size:11px;letter-spacing:.5px;margin-top:8px;text-align:center;padding:5px 12px;border-radius:20px;display:inline-block;}
+.sync-badge.ok{background:rgba(91,140,90,.14);color:#4f7a4e;}
+.sync-badge.off{background:var(--line-soft);color:var(--text3);}
+.sync-badge.warn{background:rgba(192,87,87,.12);color:#a8463f;}
+.tip-text{text-align:center;font-size:12px;color:var(--text3);margin-top:10px;letter-spacing:.5px;}
+
+@media(min-width:520px){
+  .countdown-item{min-width:calc(25% - 8px);}
+}
+/* 响应式：平板 / iPad 适配 */
+@media(min-width:600px){
+  .container{max-width:600px;}
+  .bottom-nav{max-width:600px;}
+}
+@media(min-width:768px){
+  .container{max-width:760px;}
+  .bottom-nav{max-width:760px;}
+  .card{padding:20px;}
+  .modal{max-width:480px;}
+  #page-home.active{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
+  #page-home.active .card{margin-bottom:0;}
+  #page-home .card--full{grid-column:1 / -1;}
+}
+@media(min-width:1024px){
+  .container{max-width:1000px;}
+  .bottom-nav{max-width:1000px;}
+  #page-home.active{grid-template-columns:repeat(3,1fr);}
+}
+/* 首页：健身打卡 + 血压记录 并排同高（平板横屏填满整行） */
+.home-pair{display:flex;flex-direction:column;gap:14px;}
+.home-pair > .card{flex:1 1 auto;min-width:0;margin-bottom:0;}
+@media(min-width:768px){
+  #page-home.active .home-pair{grid-column:1 / -1;}
+  .home-pair{flex-direction:row;align-items:stretch;}
+  .home-pair > .card{flex:1 1 0;}
+}
+.empty-state{text-align:center;padding:32px 20px;color:var(--text3);font-size:13px;letter-spacing:.5px;}
+.empty-state .big-emoji{font-size:40px;margin-bottom:10px;opacity:.5;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px;}
+/* 健身日历 */
+.cal-wrap{margin:12px 0 2px;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.cal-arrow{background:var(--card);border:1px solid var(--line);border-radius:9px;width:30px;height:30px;font-size:17px;line-height:1;color:var(--text2);cursor:pointer;}
+.cal-arrow:active{transform:scale(.94);}
+.cal-title{font-weight:600;font-size:14px;color:var(--ink);}
+.cal-weekrow,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.cal-weekrow{margin-bottom:5px;}
+.cal-weekrow span{text-align:center;font-size:11px;color:var(--text3);}
+.cal-cell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:9px;background:var(--line-soft);color:var(--text3);cursor:pointer;border:1px solid transparent;user-select:none;transition:background .15s;}
+.cal-cell.empty{background:transparent;cursor:default;border:none;}
+.cal-cell:not(.empty):active{transform:scale(.92);}
+.cal-cell.lv1{background:rgba(176,125,82,.26);color:var(--ink);}
+.cal-cell.lv2{background:rgba(176,125,82,.56);color:#fff;}
+.cal-cell.lv3{background:rgba(176,125,82,.92);color:#fff;}
+.cal-cell.cal-today{border-color:var(--warm);box-shadow:0 0 0 2px rgba(176,125,82,.22);}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-title">考公学习工作台</div>
+        <div class="header-sub">XIAOSHUOMI &amp; QIUQIU</div>
+      </div>
+      <button class="gear-btn" onclick="openSyncSettings()" title="同步设置">⚙</button>
+    </div>
+    <div class="sync-badge warn" id="syncBadge">同步检测中…</div>
+    <div class="switch-bar">
+      <button class="switch-btn active" onclick="switchView('personA')" id="btnA">
+        <span class="dot a"></span>小硕咪
+      </button>
+      <button class="switch-btn" onclick="switchView('personB')" id="btnB">
+        <span class="dot b"></span>秋秋
+      </button>
+    </div>
+  </div>
+
+  <!-- 首页 -->
+  <div class="page active" id="page-home">
+    <div class="card card--full">
+      <div class="card-head"><h3>考试倒计时</h3></div>
+      <div class="countdown-row" id="countdownCard"></div>
+    </div>
+
+    <!-- 健身打卡 + 血压记录（并排同高，平板横屏填满整行；仅小硕咪显示血压） -->
+    <div class="home-pair" id="homePair">
+      <div class="card" id="personalCheckinCard"></div>
+
+      <!-- 血压模块（仅小硕咪） -->
+      <div class="card" id="bpCard" style="display:none;">
+        <div class="card-head"><span class="card-kicker a">小硕咪</span><h3>血压记录</h3></div>
+        <div class="bp-inputs">
+          <span class="bp-label">收缩压</span>
+          <input id="bpSys" type="number" placeholder="120" min="60" max="200">
+          <span class="bp-sep">/</span>
+          <span class="bp-label">舒张压</span>
+          <input id="bpDia" type="number" placeholder="80" min="40" max="130">
+          <button class="pill-btn warm" onclick="addBP()">记录</button>
+        </div>
+        <div id="bpChartWrap" class="chart-box"></div>
+      </div>
+    </div>
+
+    <div class="card card--full">
+      <div class="card-head"><h3>今日学习任务</h3></div>
+      <ul class="task-list" id="todayTasks"></ul>
+      <div class="tip-text" id="todayTip"></div>
+    </div>
+
+    <!-- 数据同步默认开启（由后端同源托管时自动生效），设置入口在右上角 ⚙ -->
+  </div>
+
+  <!-- 计划 -->
+  <div class="page" id="page-plan">
+    <div class="card" id="phaseCard"></div>
+    <div class="card" id="scheduleCard"></div>
+    <div class="card" id="shenlunPhaseCard"></div>
+  </div>
+
+  <!-- 科目（模块进度条，按当前查看者独立） -->
+  <div class="page" id="page-subjects">
+    <div class="card" style="margin-bottom:12px;">
+      <div class="card-head" style="justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;"><span class="card-kicker" id="subjKicker">小硕咪</span><h3>科目学习进度</h3></div>
+        <button class="btn btn-sm btn-primary" onclick="openAddCustom()">+ 自定义进度条</button>
+      </div>
+      <p class="card-sub" style="text-align:left;">每天学完点一下对应模块，进度增加（默认模块各自独立；自定义进度条定义两人共享、进度各自记录）。</p>
+    </div>
+    <div class="module-list" id="moduleList"></div>
+  </div>
+
+  <!-- 统计（按当前查看者独立） -->
+  <div class="page" id="page-stats">
+    <div class="card">
+      <div class="card-head" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;"><span class="card-kicker" id="statsKickerA">小硕咪</span><h3>模拟考试成绩</h3></div>
+        <button class="btn btn-sm btn-primary" onclick="openAddScore()">+ 添加</button>
+      </div>
+      <div class="score-chart" id="scoreChartWrap"></div>
+    </div>
+    <div class="card">
+      <div class="card-head" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;"><span class="card-kicker" id="statsKickerB">小硕咪</span><h3>错题知识点统计</h3></div>
+        <button class="btn btn-sm btn-primary" onclick="openAddWrong()">+ 新标签</button>
+      </div>
+      <div id="wrongList" class="wrong-grid"></div>
+      <p class="card-sub" style="text-align:left;margin-top:10px;">点击已有标签即可 +1 错题次数，颜色越深表示错得越多；点「+ 新标签」新增（不可重复）。</p>
+    </div>
+  </div>
+
+  <!-- 新闻 -->
+  <div class="page" id="page-news">
+    <!-- 时事热点 -->
+    <div class="card">
+      <div class="card-head" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;"><span class="card-kicker">新闻</span><h3>时事热点</h3></div>
+        <button class="btn btn-sm btn-primary" onclick="refreshNews()">刷新</button>
+      </div>
+      <p class="card-sub" id="newsAutoHint" style="margin:2px 0 12px;">每日 07:10 自动更新最新时事热点</p>
+      <div class="news-head-row">
+        <span class="news-update" id="newsUpdateTime">—</span>
+        <span class="card-sub" style="margin:0;">按来源筛选 · 阅读全文跳来源</span>
+      </div>
+      <div class="news-filter" id="newsSourceFilter"></div>
+      <div id="newsPageList"></div>
+    </div>
+  </div>
+
+  <!-- 申论 -->
+  <div class="page" id="page-shenlun">
+    <div class="card">
+      <div class="card-head" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;"><span class="card-kicker" style="background:#8BAE7C;">申论</span><h3>申论素材库</h3></div>
+        <button class="btn btn-sm btn-primary" onclick="openKeywordModal()">+ 添加关键词</button>
+      </div>
+      <p class="card-sub" style="margin:2px 0 12px;">自建关键词标签，记录解读、素材摘抄与相关新闻，备考随时回看（双人共享）。</p>
+      <div id="shenlunKeywordList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="switchPage('home')" id="nav-home">
+    <span class="nav-icon">⌂</span>首页
+  </button>
+  <button class="nav-item" onclick="switchPage('plan')" id="nav-plan">
+    <span class="nav-icon">▤</span>计划
+  </button>
+  <button class="nav-item" onclick="switchPage('subjects')" id="nav-subjects">
+    <span class="nav-icon">▦</span>科目
+  </button>
+  <button class="nav-item" onclick="switchPage('stats')" id="nav-stats">
+    <span class="nav-icon">◷</span>统计
+  </button>
+  <button class="nav-item" onclick="switchPage('news')" id="nav-news">
+    <span class="nav-icon">📰</span>新闻
+  </button>
+  <button class="nav-item" onclick="switchPage('shenlun')" id="nav-shenlun">
+    <span class="nav-icon">✎</span>申论
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+/* ============ 考公学习工作台 · JS ============ */
+const EXAMS = [
+  {id:'guokao',name:'国考',date:'2026-12-01',xingce:77,shenlun:70},
+  {id:'gdshengkao',name:'广东省考',date:'2026-12-07',xingce:85,shenlun:80},
+  {id:'hbshengkao',name:'湖北省考',date:'2027-03-15',xingce:80,shenlun:81},
+  {id:'gdsydw',name:'广东事业编',date:'2027-03-31',xingce:90,shenlun:null}
+];
+
+/* 筑基期模块：每个模块“次数/页数”量化目标，点击 +1 推进进度 */
+const MODULES = [
+  {id:'politics', name:'政治理论', group:'政治', teacher:'小黑', color:'#C2917F',
+   total:30, startCurrent:0, per:'每日 07:20–07:50 · 30分钟', desc:'观看视频 + 总结'},
+  {id:'graphic', name:'图推', group:'判断推理', teacher:'刘义恒700题', color:'#C4A46B',
+   total:35, startCurrent:0, per:'每日 20题 · 30分钟/次', desc:'共700题，35次学完'},
+  {id:'logic', name:'逻辑判断', group:'判断推理', teacher:'花生十三判断600题', color:'#8C8C8C',
+   total:30, startCurrent:0, per:'每日 20题 · 30分钟/次', desc:'共600题，30次学完'},
+  {id:'verbal', name:'言语理解', group:'言语理解', teacher:'张弓言语', color:'#7E97B3',
+   total:12, startCurrent:0, per:'10分钟课程 + 10分钟练习', desc:'共12次'},
+  {id:'quant', name:'数量关系', group:'数量关系', teacher:'小P / 毛娃(B站)', color:'#A487AE',
+   total:40, startCurrent:0, per:'每日 20题 · 共800题', desc:'40次学完'},
+  {id:'data_kk', name:'资料·夸夸刷', group:'资料分析', teacher:'高照', color:'#7FB0A1',
+   total:20, startCurrent:8, per:'每次 20页 · 共400页', desc:'已学156页(39%)，还需12次'},
+  {id:'data_cb', name:'资料·超大杯', group:'资料分析', teacher:'高照', color:'#5E9C8B',
+   total:25, startCurrent:0, per:'每日 4题 · 共100题', desc:'25次学完'},
+  {id:'shenlun', name:'申论', group:'申论', teacher:'白鹭 / 袁东(原题)', color:'#8BAE7C',
+   total:30, startCurrent:0, per:'每日练习 · 四阶段递进', desc:'小题→大作文→复盘'}
+];
+const SCHEDULE_META = {};
+MODULES.forEach(m=>{SCHEDULE_META[m.id]={name:m.name,color:m.color,desc:m.desc};});
+
+/* 两阶段：筑基期(教材系统学) + 精进期(粉笔模考+错题统计) */
+const PHASES = [
+  {id:'zhuji', name:'筑基期', start:'2026-07-29', end:'2026-08-28',
+   focus:'指定教材/题册系统学习：图推700题、判断600题、张弓言语、数量800题、资料夸夸刷+超大杯、政治理论、申论四阶段，建立完整知识框架。', mode:'textbook'},
+  {id:'jingjin', name:'精进期', start:'2026-08-29', end:'2027-03-31',
+   focus:'粉笔APP模拟套卷 + 记录成绩 + 错题知识点统计，限时实战、查漏补缺，直至四场考试。', mode:'mock'}
+];
+
+/* 申论四阶段递进（筑基期内执行，仅练国考/省考原题） */
+const SHENLUN_PHASES = [
+  {id:1,name:'小题入门',start:'2026-07-29',end:'2026-08-28',desc:'每天1道小题',time:'约20分钟',detail:'概括归纳、综合分析小题，精做精析'},
+  {id:2,name:'小题进阶',start:'2026-08-29',end:'2026-09-28',desc:'每天2道小题',time:'约30分钟',detail:'概括+对策/分析，提升速度与准确度'},
+  {id:3,name:'大作文',start:'2026-09-29',end:'2026-10-28',desc:'每天练习大作文',time:'约50分钟',detail:'审题→列提纲→写作→对照范文'},
+  {id:4,name:'复盘巩固',start:'2026-10-29',end:'2027-03-31',desc:'复盘+模拟',time:'按需安排',detail:'回顾错题范文，结合模拟查漏补缺'}
+];
+
+/* 筑基期每日课表：穿插学习法，每天每科都覆盖（周一至周六相同，周日模考日） */
+const WEEKLY_SCHEDULE = [
+  {time:'07:20-07:50', slots:['politics','politics','politics','politics','politics','politics','politics']},
+  {time:'08:00-11:00', slots:['rest','rest','rest','rest','rest','rest','mock']},
+  {time:'11:00-12:00', slots:['rest','rest','rest','rest','rest','rest','review']},
+  {time:'14:00-16:00', slots:['rest','rest','rest','rest','rest','rest','review']},
+  {time:'16:00-17:30', slots:['rest','rest','rest','rest','rest','rest','review']},
+  {time:'18:00-18:30', slots:['graphic','graphic','graphic','graphic','graphic','graphic','graphic']},
+  {time:'18:30-19:00', slots:['logic','logic','logic','logic','logic','logic','logic']},
+  {time:'19:00-19:30', slots:['quant','quant','quant','quant','quant','quant','quant']},
+  {time:'19:30-20:00', slots:['data_kk','data_kk','data_kk','data_kk','data_kk','data_kk','data_kk']},
+  {time:'20:00-20:20', slots:['data_cb','data_cb','data_cb','data_cb','data_cb','data_cb','data_cb']},
+  {time:'20:20-20:40', slots:['verbal','verbal','verbal','verbal','verbal','verbal','verbal']},
+  {time:'20:40-21:00', slots:['shenlun','shenlun','shenlun','shenlun','shenlun','shenlun','shenlun']}
+];
+
+// ============ 默认状态 ============
+function defaultState(){
+  const modA = {}, modB = {};
+  MODULES.forEach(m=>{modA[m.id]=m.startCurrent||0; modB[m.id]=m.startCurrent||0;});
+  return {
+    personA:{fitness:{records:{}},bloodPressure:{records:{}},modules:modA,customProgress:{},customModules:[],removedCustom:[],scores:[],wrongTopics:[]},
+    personB:{writing:{records:{},target:5000},modules:modB,customProgress:{},customModules:[],removedCustom:[],scores:[],wrongTopics:[]},
+    shared:{tasks:{},keywords:[]}
+  };
+}
+
+let state = defaultState();
+let currentView = 'personA';
+let currentPage = 'home';
+
+// 当前查看者（小硕咪 / 秋秋）的数据访问
+function curPerson(){return currentView==='personA'?state.personA:state.personB;}
+function curModules(){return curPerson().modules||{};}
+function curScores(){return curPerson().scores||[];}
+function curWrong(){return curPerson().wrongTopics||[];}
+function curKicker(){return currentView==='personA'?{cls:'a',name:'小硕咪'}:{cls:'b',name:'秋秋'};}
+function curCustomModules(){return curPerson().customModules||[];}
+function curCustomProgress(){return curPerson().customProgress||{};}
+
+// ============ 数据一次性重置 ============
+// 升级此版本号即可触发「指定数据归零」（用于用户测试后清空）。
+const DATA_RESET_V = 3;
+
+// ============ 持久化 ============
+function save(silent){
+  localStorage.setItem('kaogong_v3',JSON.stringify(state));
+  // —— 云同步：比较各顶层字段是否变化，记录修改时间并触发同步 ——
+  try{
+    const snap = JSON.parse(localStorage.getItem('syncSnap')||'{}');
+    let dirty=false; const now=Date.now();
+    for(const k of Object.keys(state)){
+      const s=JSON.stringify(state[k]);
+      if(snap[k]!==s){ keyTs[k]=now; dirty=true; }
+    }
+    localStorage.setItem('syncSnap', JSON.stringify(snapshotNow()));
+    localStorage.setItem('syncKeyTs', JSON.stringify(keyTs));
+    if(dirty && syncEnabled && !inSync) scheduleSync();
+  }catch(e){}
+}
+function snapshotNow(){ const o={}; for(const k of Object.keys(state)) o[k]=JSON.stringify(state[k]); return o; }
+
+// 只允许这三个顶层字段参与云同步，避免 __resetV 等控制字段被同步覆盖引发二次归零
+const SYNC_KEYS = ['shared','personA','personB'];
+
+// 深合并：本地独有的子数据（血压/科目进度/模考/错题等）一律保留，
+// 远端独有的加进来，两边都有的按 id/ts 去重合并（不再是整块替换，避免互相冲掉）。
+function deepMerge(local, remote){
+  if(remote === undefined || remote === null) return local;
+  if(Array.isArray(remote)){
+    if(!Array.isArray(local)) return remote.slice();
+    const keyOf = x => (x && (x.id !== undefined ? x.id : (x.ts !== undefined ? x.ts : JSON.stringify(x))));
+    const map = new Map();
+    local.forEach(it => map.set(keyOf(it), it));
+    remote.forEach(it => map.set(keyOf(it), it)); // 远端覆盖同 key 项
+    return Array.from(map.values());
+  }
+  if(remote && typeof remote === 'object'){
+    if(!local || typeof local !== 'object' || Array.isArray(local)) local = {};
+    for(const k of Object.keys(remote)){
+      local[k] = deepMerge(local[k], remote[k]);
+    }
+    return local;
+  }
+  return remote; // 标量：远端覆盖
+}
+
+// ============ 云同步（跨设备共享）============
+// 后端为同目录 server.js（/api/state），或任意兼容后端（通过 ?backend= 或界面设置）。
+// 同步策略：顶层字段级合并（keyTs 较大者胜），避免两人/两设备互相覆盖。
+let SYNC_BACKEND = localStorage.getItem('syncBackend') || (new URLSearchParams(location.search).get('backend')) || '';
+let SYNC_ROOM = localStorage.getItem('syncRoom') || (new URLSearchParams(location.search).get('room')) || 'kaogong-shared';
+let syncEnabled = false, inSync = false, syncTimer = null, knownRev = 0;
+let keyTs = {};
+function loadKeyTs(){ try{ keyTs = JSON.parse(localStorage.getItem('syncKeyTs')||'{}'); }catch(e){ keyTs={}; } }
+function apiURL(){ return (SYNC_BACKEND||'') + '/api/state?room=' + encodeURIComponent(SYNC_ROOM); }
+async function apiGet(){
+  const r = await fetch(apiURL(), {credentials:'omit'});
+  if(!r.ok) throw new Error('sync GET '+r.status);
+  return await r.json();
+}
+async function apiPut(){
+  const r = await fetch(apiURL(), {method:'PUT', credentials:'omit', headers:{'Content-Type':'application/json'}, body: JSON.stringify({state:state, keyTs:keyTs})});
+  if(!r.ok) throw new Error('sync PUT '+r.status);
+  return await r.json();
+}
+function scheduleSync(){ if(inSync) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 1000); }
+async function syncNow(){
+  if(inSync) return;
+  inSync = true;
+  try{
+    const remote = await apiGet();
+    let changed=false;
+    const remoteResetAt = (remote && remote.resetAt) || 0;
+    const localResetAt = Number(localStorage.getItem('syncResetAt') || 0);
+    if(remoteResetAt > localResetAt){
+      // 其他设备发起过「清空全部数据」，本机也跟随清空
+      state = defaultState();
+      keyTs = {};
+      localStorage.setItem('syncResetAt', String(remoteResetAt));
+      localStorage.removeItem('syncSnap');
+      localStorage.removeItem('syncKeyTs');
+      save(true);
+      renderAll();
+      changed = true;
+    } else if(remote && remote.state){
+      knownRev = remote.rev||0;
+      for(const k of SYNC_KEYS){
+        if(!(k in remote.state)) continue;
+        const rt=(remote.keyTs&&remote.keyTs[k])||0, lt=keyTs[k]||0;
+        if(rt>lt){ state[k]=deepMerge(state[k], remote.state[k]); keyTs[k]=rt; changed=true; }
+      }
+    }
+    if(changed){
+      localStorage.setItem('syncSnap', JSON.stringify(snapshotNow()));
+      localStorage.setItem('syncKeyTs', JSON.stringify(keyTs));
+      save(true);
+      renderAll();
+    }
+    const resp = await apiPut();
+    knownRev = resp.rev||knownRev;
+    syncEnabled = true;
+  }catch(e){
+    syncEnabled = false;
+  } finally {
+    inSync = false;
+    updateSyncStatus();
+  }
+}
+// 同源自动探测：当应用由 server.js 同源托管时（如 Render 部署），无需任何配置即可同步
+let syncAuto = false;
+async function detectSameOriginBackend(){
+  if(SYNC_BACKEND) return false; // 已显式配置则不探测
+  try{
+    const u = location.origin + '/api/state?room=__detect__';
+    const r = await fetch(u, {method:'GET', credentials:'omit'});
+    const ct = r.headers.get('content-type')||'';
+    if(r.ok && ct.indexOf('application/json')>=0){
+      const j = await r.json().catch(()=>null);
+      if(j && ('state' in j)){ syncAuto = true; return true; }
+    }
+  }catch(e){}
+  return false;
+}
+async function testAndInitSync(){
+  if(!SYNC_BACKEND){ await detectSameOriginBackend(); }
+  try{
+    const r = await fetch(apiURL(), {method:'GET', credentials:'omit'});
+    syncEnabled = r.ok;
+  }catch(e){ syncEnabled = false; }
+  updateSyncStatus();
+  if(syncEnabled) await syncNow();
+}
+function updateSyncStatus(){
+  const el = document.getElementById('syncBadge');
+  if(!el) return;
+  if(syncEnabled){
+    el.textContent = (syncAuto?'☁ 已自动同步':'☁ 已连接同步') + '（房间：'+SYNC_ROOM+'）';
+    el.className = 'sync-badge ok';
+  }else{
+    el.textContent = SYNC_BACKEND ? '⚠ 同步地址不可达，使用本机存储' : '⚠ 未连接同步服务，使用本机存储（请用永久地址打开）';
+    el.className = 'sync-badge off';
+  }
+}
+function saveSyncConfig(){
+  SYNC_BACKEND = (document.getElementById('syncBackendInput').value||'').trim();
+  SYNC_ROOM = (document.getElementById('syncRoomInput').value||'kaogong-shared').trim();
+  localStorage.setItem('syncBackend', SYNC_BACKEND);
+  localStorage.setItem('syncRoom', SYNC_ROOM);
+  loadKeyTs();
+  localStorage.setItem('syncSnap', JSON.stringify(snapshotNow()));
+  closeModal();
+  testAndInitSync();
+  showToast('已保存同步配置');
+}
+function openSyncSettings(){
+  const html = `
+    <h3 style="margin:0 0 6px;color:var(--warm);">同步设置</h3>
+    <p class="card-sub" style="margin:0 0 14px;">用永久地址（由后端托管）打开即自动同步，无需配置。以下可手动指定同步服务器或房间。</p>
+    <label class="form-label">同步服务器地址</label>
+    <input id="syncBackendInput" class="form-input" placeholder="留空=同源 /api/state" value="${SYNC_BACKEND}">
+    <label class="form-label" style="margin-top:12px;">房间号（两人需一致）</label>
+    <input id="syncRoomInput" class="form-input" placeholder="kaogong-shared" value="${SYNC_ROOM}">
+    <div class="sync-bar" style="margin-top:16px;">
+      <button class="btn btn-sm btn-primary" onclick="saveSyncConfig()">保存并连接</button>
+      <button class="btn btn-sm btn-secondary" onclick="syncNow()">立即同步</button>
+    </div>
+    <div class="sync-bar" style="margin-top:10px;">
+      <button class="btn btn-sm" onclick="generateShareLink()">复制分享链接</button>
+      <button class="btn btn-sm" onclick="importFromClipboard()">导入对方数据</button>
+    </div>
+    <div class="sync-bar" style="margin-top:12px;border-top:1px dashed var(--line);padding-top:12px;">
+      <button class="btn btn-sm btn-danger" onclick="clearAllData()">清空全部数据</button>
+      <span class="card-sub" style="margin:0;font-size:11px;">清本机 + 清云端，其他设备下次打开也会清空</span>
+    </div>`;
+  openModal(html);
+}
+function clearAllData(){
+  if(!confirm('确定清空全部数据？\n将删除本机与云端（房间 '+SYNC_ROOM+'）的所有记录，无法恢复。')) return;
+  const resetAt = Date.now();
+  localStorage.setItem('syncResetAt', String(resetAt));
+  // 推送到云端，使其他设备下次同步时也清空
+  try{
+    fetch(apiURL(), {method:'PUT', headers:{'content-type':'application/json'}, body: JSON.stringify({state:{}, keyTs:{}, resetAt})});
+  }catch(e){}
+  state = defaultState();
+  keyTs = {};
+  localStorage.removeItem('kaogong_v3');
+  localStorage.removeItem('syncSnap');
+  localStorage.removeItem('syncKeyTs');
+  closeModal();
+  showToast('已清空全部数据');
+  setTimeout(()=>location.reload(), 700);
+}
+function load(){
+  const raw = localStorage.getItem('kaogong_v3');
+  if(raw){
+    try{
+      const p = JSON.parse(raw);
+      if(p.shared && p.personA && p.personB){
+        state = p;
+        if(!state.shared) state.shared={};
+        if(!state.shared.tasks) state.shared.tasks={};
+        if(!state.shared.keywords) state.shared.keywords=[];
+        if(!state.personA) state.personA={};
+        if(!state.personB) state.personB={};
+        if(!state.personA.bloodPressure) state.personA.bloodPressure={readings:[]};
+        // 兼容旧数据：把按日期存储的 records 迁移为按「每次测量」存储的 readings 数组
+        if(state.personA.bloodPressure && !Array.isArray(state.personA.bloodPressure.readings)){
+          var oldRec = state.personA.bloodPressure.records || {};
+          state.personA.bloodPressure.readings = Object.keys(oldRec).sort().map(function(d){
+            return {ts: d+'T08:00:00', sys: oldRec[d].sys, dia: oldRec[d].dia};
+          });
+        }
+        if(!state.personA.fitness) state.personA.fitness={records:{}};
+        if(!state.personA.modules) state.personA.modules={};
+        if(!state.personA.scores) state.personA.scores=[];
+        if(!state.personA.wrongTopics) state.personA.wrongTopics=[];
+        if(!state.personB.writing) state.personB.writing={records:{},target:5000};
+        if(typeof state.personB.writing.target==='undefined') state.personB.writing.target=5000;
+        if(!state.personB.modules) state.personB.modules={};
+        if(!state.personB.scores) state.personB.scores=[];
+        if(!state.personB.wrongTopics) state.personB.wrongTopics=[];
+        if(!state.personA.customProgress) state.personA.customProgress={};
+        if(!state.personB.customProgress) state.personB.customProgress={};
+        if(!state.personA.customModules) state.personA.customModules=[];
+        if(!state.personA.removedCustom) state.personA.removedCustom=[];
+        if(!state.personB.customModules) state.personB.customModules=[];
+        if(!state.personB.removedCustom) state.personB.removedCustom=[];
+        // 迁移旧版：shared.customModules / removedCustom → 仅归属 personA（小硕咪），
+        // 秋秋不再共享显示，实现「各自生成各自的进度条」。
+        if(Array.isArray(state.shared.customModules) && state.shared.customModules.length){
+          if(!state.personA.customModules.length){
+            state.personA.customModules = state.shared.customModules.slice();
+          }
+          if(!state.personA.removedCustom.length && Array.isArray(state.shared.removedCustom)){
+            state.personA.removedCustom = state.shared.removedCustom.slice();
+          }
+        }
+        delete state.shared.customModules;
+        delete state.shared.removedCustom;
+        MODULES.forEach(m=>{
+          if(typeof state.personA.modules[m.id]==='undefined') state.personA.modules[m.id]=m.startCurrent||0;
+          if(typeof state.personB.modules[m.id]==='undefined') state.personB.modules[m.id]=m.startCurrent||0;
+        });
+        applyDataReset();
+        return;
+      }
+    }catch(e){}
+  }
+  state = defaultState();
+  save();
+}
+
+// 一次性归零 + 结构迁移（每次升级 DATA_RESET_V 触发）
+function applyDataReset(){
+  if(state.__resetV === DATA_RESET_V) return;
+  // 1) 迁移：旧 shared.modules/scores/wrongTopics → 各人独立
+  if(state.shared && state.shared.modules){
+    MODULES.forEach(m=>{
+      const v = state.shared.modules[m.id];
+      if(typeof v!=='undefined'){ state.personA.modules[m.id]=v; state.personB.modules[m.id]=v; }
+    });
+    delete state.shared.modules;
+  }
+  if(state.shared && state.shared.scores) delete state.shared.scores;
+  if(state.shared && state.shared.wrongTopics) delete state.shared.wrongTopics;
+  if(state.shared && state.shared.logs) delete state.shared.logs;
+  // 2) 确保各人 modules 齐全
+  MODULES.forEach(m=>{
+    if(typeof state.personA.modules[m.id]==='undefined') state.personA.modules[m.id]=m.startCurrent||0;
+    if(typeof state.personB.modules[m.id]==='undefined') state.personB.modules[m.id]=m.startCurrent||0;
+  });
+  // 3) 归零：健身 / 码字 / 模考 / 错题（资料·夸夸刷保留原值）
+  if(state.personA.fitness) state.personA.fitness.records = {};
+  if(state.personB.writing) state.personB.writing.records = {};
+  state.personA.scores = [];
+  state.personB.scores = [];
+  state.personA.wrongTopics = [];
+  state.personB.wrongTopics = [];
+  state.__resetV = DATA_RESET_V;
+  save();
+}
+
+// ============ 工具 ============
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function parseDate(s){return new Date(s+'T00:00:00');}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+function openModal(html){
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');}
+function pad(n){return String(n).padStart(2,'0');}
+function lastNDays(n){
+  const arr = [];
+  for(let i=n-1;i>=0;i--){
+    const d = new Date();d.setDate(d.getDate()-i);
+    arr.push(d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()));
+  }
+  return arr;
+}
+function dowCN(d){return ['日','一','二','三','四','五','六'][new Date(d+'T00:00:00').getDay()];}
+// 新闻日期：官方 RSS（人民网/央视等）的 pubDate 多为冻结旧值（如 2025-06-05），
+// 故只信任「同年、未超未来 2 天、距今 <400 天」的真实日期，否则回落到抓取时间。
+function pickNewsTime(pubDate, collectedAt){
+  const t = Date.parse(pubDate);
+  const now = Date.now();
+  if(!isNaN(t)){
+    const d = new Date(t);
+    if(d.getFullYear()===new Date().getFullYear() && t<=now+2*86400000 && (now-t)<400*86400000) return t;
+  }
+  return collectedAt;
+}
+function formatNewsDate(t){
+  if(!t) return '';
+  const d = new Date(t);
+  if(isNaN(d.getTime())) return '';
+  const startOf = x => new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
+  const diff = Math.round((startOf(new Date())-startOf(d))/86400000);
+  if(diff<=0) return '今天';
+  if(diff===1) return '昨天';
+  if(diff<7) return diff+'天前';
+  return (d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+
+// ============ 切换 ============
+function switchPage(page){
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+page).classList.add('active');
+  renderAll();
+}
+function switchView(view){
+  currentView = view;
+  document.getElementById('btnA').classList.toggle('active',view==='personA');
+  document.getElementById('btnB').classList.toggle('active',view==='personB');
+  renderAll();
+}
+
+// ============ 渲染引擎 ============
+function renderAll(){
+  renderCountdown();
+  renderPersonalCheckin();
+  renderBPModule();
+  renderTodayTasks();
+  renderPhaseCard();
+  renderSchedule();
+  renderShenlunPhaseCard();
+  renderModules();
+  renderStats();
+  renderNewsPage();
+  renderKeywordsPage();
+}
+
+// --- 倒计时 ---
+function renderCountdown(){
+  const today = todayStr();
+  document.getElementById('countdownCard').innerHTML =
+    EXAMS.map(e=>{
+      const days = Math.ceil((parseDate(e.date)-parseDate(today))/(86400000));
+      return `<div class="countdown-item ${days<=14?'urgent':''}">
+        <div class="countdown-name">${e.name}</div>
+        <div class="countdown-days">${days>0?days:'✦'}<span>天</span></div>
+        <div class="countdown-target">行测${e.xingce}${e.shenlun!==null?' / 申论'+e.shenlun:''}</div>
+      </div>`;
+    }).join('');
+}
+
+// --- 个人打卡面板 ---
+function renderPersonalCheckin(){
+  const card = document.getElementById('personalCheckinCard');
+  if(currentView === 'personA') renderFitnessCard(card);
+  else renderWritingCard(card);
+}
+// 健身日历视图：默认跟随当前月（fitAuto）；用户手动翻月后固定
+let fitView = {y:new Date().getFullYear(), m:new Date().getMonth()};
+let fitAuto = true;
+function renderFitnessCard(card){
+  if(fitAuto){ fitView = {y:new Date().getFullYear(), m:new Date().getMonth()}; }
+  const today = todayStr();
+  const recs = state.personA.fitness.records;
+  const y = fitView.y, m = fitView.m;
+  const firstDow = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const cells = [];
+  for(let i=0;i<firstDow;i++) cells.push(null);
+  for(let d=1; d<=daysInMonth; d++) cells.push(d);
+  const lvlClass = ['','lv1','lv2','lv3'];
+  const grid = cells.map(c=>{
+    if(c===null) return '<div class="cal-cell empty"></div>';
+    const key = y+'-'+pad(m+1)+'-'+pad(c);
+    const lv = Math.min(recs[key]||0, 3);
+    const isToday = key===today;
+    return '<div class="cal-cell '+lvlClass[lv]+' '+(isToday?'cal-today':'')+'" onclick="toggleFitDay(\''+key+'\')"><span>'+c+'</span></div>';
+  }).join('');
+  let monthDays=0, monthJumps=0;
+  for(let d=1; d<=daysInMonth; d++){
+    const lv = recs[y+'-'+pad(m+1)+'-'+pad(d)]||0;
+    if(lv>0){ monthDays++; monthJumps += lv*100; }
+  }
+  const totalDays = Object.keys(recs).length;
+  card.innerHTML = `
+    <div class="card-head"><span class="card-kicker a">小硕咪</span><h3>健身打卡</h3></div>
+    <p class="card-sub" style="text-align:center;">点当日方块打卡：颜色越深练得越多（浅→中→深），再点归零 · 每次≈100开合跳</p>
+    <div class="cal-wrap">
+      <div class="cal-nav">
+        <button class="cal-arrow" onclick="moveFitMonth(-1)">‹</button>
+        <span class="cal-title">${y}年${m+1}月</span>
+        <button class="cal-arrow" onclick="moveFitMonth(1)">›</button>
+      </div>
+      <div class="cal-weekrow"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+      <div class="cal-grid">${grid}</div>
+    </div>
+    <div class="mini-stats">
+      <div><b>${monthDays}</b><span>本月打卡天</span></div>
+      <div><b>${monthJumps}</b><span>本月开合跳</span></div>
+      <div><b>${totalDays}</b><span>累计天数</span></div>
+    </div>`;
+}
+function toggleFitDay(key){
+  const cur = state.personA.fitness.records[key]||0;
+  const next = ((cur%4)+1)%4;   // 0→1→2→3→0 循环：点击一次加深，再点更深，第四次归零
+  if(next===0) delete state.personA.fitness.records[key];
+  else state.personA.fitness.records[key] = next;
+  save(); renderAll();
+  const lvName = ['','浅','中','深'][next];
+  showToast(next===0 ? '已清除 '+key+' 打卡' : key+' 打卡 · 强度：'+lvName);
+}
+function moveFitMonth(delta){
+  fitAuto = false;
+  fitView.m += delta;
+  if(fitView.m<0){ fitView.m=11; fitView.y--; }
+  if(fitView.m>11){ fitView.m=0; fitView.y++; }
+  renderAll();
+}
+// ============ 内联 SVG 折线图（无外部依赖） ============
+function niceMax(v){
+  if(v<=0) return 100;
+  const pow=Math.pow(10,Math.floor(Math.log10(v)));
+  const n=v/pow; let m;
+  if(n<=1)m=1; else if(n<=2)m=2; else if(n<=5)m=5; else m=10;
+  return m*pow;
+}
+function svgLineChart(cfg){
+  const W=340,H=220,L=30,R=12,T=14,B=28;
+  const pw=W-L-R, ph=H-T-B;
+  const labels=cfg.labels||[], datasets=cfg.datasets||[];
+  const yMin=cfg.yMin!=null?cfg.yMin:0, yMax=cfg.yMax!=null?cfg.yMax:100, yStep=cfg.yStep||20;
+  const n=labels.length;
+  const yOf=v=>T+(1-(v-yMin)/(yMax-yMin))*ph;
+  const xOf=i=> n<=1 ? L+pw/2 : L+(i/(n-1))*pw;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:200px;display:block;" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">';
+  for(let v=yMin; v<=yMax+1e-6; v+=yStep){
+    const y=yOf(v);
+    s+='<line x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+'" stroke="rgba(0,0,0,.05)" stroke-width="1"/>';
+    s+='<text x="'+(L-4)+'" y="'+(y+3)+'" text-anchor="end" font-size="9" fill="#A6A6A6">'+v+'</text>';
+  }
+  const every=n>8?Math.ceil(n/8):1;
+  labels.forEach((lb,i)=>{
+    if(i%every===0||i===n-1){
+      s+='<text x="'+xOf(i)+'" y="'+(H-10)+'" text-anchor="middle" font-size="9" fill="#A6A6A6">'+lb+'</text>';
+    }
+  });
+  datasets.forEach(ds=>{
+    const pts=ds.data.map((v,i)=> (v==null)?null:{x:xOf(i),y:yOf(v)});
+    const segs=[]; let cur=[];
+    pts.forEach(p=>{ if(p){cur.push(p);} else { if(cur.length){segs.push(cur);cur=[];} } });
+    if(cur.length) segs.push(cur);
+    segs.forEach(seg=>{
+      if(seg.length===1){
+        s+='<circle cx="'+seg[0].x+'" cy="'+seg[0].y+'" r="3" fill="'+ds.borderColor+'"/>';
+      }else{
+        const ps=seg.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+        s+='<polyline points="'+ps+'" fill="none" stroke="'+ds.borderColor+'" stroke-width="2"'+(ds.dashed?' stroke-dasharray="5,4"':'')+' stroke-linejoin="round" stroke-linecap="round"/>';
+      }
+    });
+    pts.forEach(p=>{ if(p) s+='<circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="'+ds.borderColor+'"/>'; });
+  });
+  s+='</svg>';
+  let legend='';
+  if(datasets.length>1){
+    legend='<div class="svg-legend">'+datasets.map(ds=>{
+      const bg=ds.dashed?('repeating-linear-gradient(90deg,'+ds.borderColor+' 0 4px,transparent 4px 7px)'):ds.borderColor;
+      return '<span class="lg"><i style="background:'+bg+'"></i>'+ds.label+'</span>';
+    }).join('')+'</div>';
+  }
+  return s+legend;
+}
+
+function renderWritingCard(card){
+  const today = todayStr();
+  const target = state.personB.writing.target || 5000;
+  const bRec = state.personB.writing.records[today] || 0;
+  const days30 = lastNDays(30);
+  const recs = days30.filter(d=>state.personB.writing.records[d]).reverse();
+  const total = recs.reduce((s,d)=>s+(state.personB.writing.records[d]||0),0);
+  const streak = recs.length;
+
+  let history = '';
+  if(recs.length){
+    history = `<div class="mini-stats">
+      <div><b>${streak}</b><span>坚持天数</span></div>
+      <div><b>${total.toLocaleString()}</b><span>累计字数</span></div>
+      <div><b>${Math.round(total/(streak||1)).toLocaleString()}</b><span>日均字数</span></div>
+    </div>
+    <div class="rec-list">
+      <div class="rec-head">近期记录</div>
+      ${recs.slice(0,14).map(d=>{
+        const c = state.personB.writing.records[d];
+        return `<div class="rec-row"><span>${d.slice(5)} 周${dowCN(d)}</span><span>${c.toLocaleString()} 字</span></div>`;
+      }).join('')}
+    </div>`;
+  }
+  const days = lastNDays(7);
+  const data = days.map(d=>state.personB.writing.records[d]||0);
+  const hasData = data.some(v=>v>0);
+  let chart = '';
+  if(hasData){
+    chart = `<div class="chart-box"><div class="chart-label">近 7 天码字趋势</div><div id="writingChart"></div></div>`;
+  }
+  card.innerHTML = `
+    <div class="card-head"><span class="card-kicker b">秋秋</span><h3>码字记录</h3></div>
+    <div class="big-count" style="color:var(--cool)">${bRec.toLocaleString()}<span>/ ${target.toLocaleString()} 字</span></div>
+    <p class="card-sub" style="text-align:center;">每日目标 ${target.toLocaleString()} 字</p>
+    <div class="input-row">
+      <input class="mini-input" id="writingInput" type="number" placeholder="本次字数" min="1">
+      <button class="pill-btn cool" onclick="addWriting()">打卡</button>
+    </div>
+    ${chart}
+    ${history}`;
+  if(hasData){
+    setTimeout(()=>{
+      const el = document.getElementById('writingChart');
+      if(!el) return;
+      const maxV = Math.max.apply(null, data.concat([1]));
+      const yMax = niceMax(maxV);
+      el.innerHTML = svgLineChart({
+        labels: days.map(d=>d.slice(5)),
+        datasets:[{label:'码字数',data:data,borderColor:'#4F5B66'}],
+        yMin:0, yMax:yMax, yStep:Math.max(1,Math.round(yMax/5))
+      });
+    },60);
+  }
+}
+function addFitness(){
+  const today = todayStr();
+  state.personA.fitness.records[today] = (state.personA.fitness.records[today]||0) + 1;
+  save();
+  renderAll();
+  showToast('小硕咪 健身打卡 +1（今日 ' + state.personA.fitness.records[today] + ' 次）');
+}
+function addWriting(){
+  const today = todayStr();
+  const input = document.getElementById('writingInput');
+  const n = parseInt(input.value);
+  if(isNaN(n)||n<=0){showToast('请输入有效字数');return;}
+  state.personB.writing.records[today] = (state.personB.writing.records[today]||0) + n;
+  input.value = '';
+  save();
+  renderAll();
+  showToast('秋秋 +' + n + ' 字');
+}
+
+// --- 血压（仅小硕咪） ---
+function renderBPModule(){
+  const bpCard = document.getElementById('bpCard');
+  if(currentView !== 'personA'){bpCard.style.display = 'none';return;}
+  bpCard.style.display = 'block';
+  const wrap = document.getElementById('bpChartWrap');
+  const list = (state.personA.bloodPressure.readings || []).slice().sort(function(a,b){return a.ts < b.ts ? -1 : 1});
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty-state" style="padding:14px 0;"><p style="font-size:12px;">还没有血压记录，每次测完点一下「记录」即可生成趋势图（横坐标为检测次数，一天可记录多次）。</p></div>';
+    return;
+  }
+  const labels = list.map(function(_,i){return ''+(i+1);});   // 1,2,3… 第几次检测
+  const sysData = list.map(function(e){return e.sys;});        // 收缩压
+  const diaData = list.map(function(e){return e.dia;});        // 舒张压
+  wrap.innerHTML = '<div class="chart-label">血压趋势（横坐标：检测次数）</div><div id="bpChart"></div>';
+  setTimeout(function(){
+    const el = document.getElementById('bpChart');
+    if(!el) return;
+    el.innerHTML = svgLineChart({
+      labels:labels,
+      datasets:[
+        {label:'收缩压',data:sysData,borderColor:'#F4A7C0'},   // 浅粉色
+        {label:'舒张压',data:diaData,borderColor:'#9ED3A8'}    // 浅绿色
+      ],
+      yMin:40, yMax:200, yStep:20
+    });
+  },60);
+}
+function addBP(){
+  const sys = parseInt(document.getElementById('bpSys').value);
+  const dia = parseInt(document.getElementById('bpDia').value);
+  if(isNaN(sys)||isNaN(dia)||sys<60||sys>200||dia<40||dia>130){showToast('请输入有效的血压值');return;}
+  if(!Array.isArray(state.personA.bloodPressure.readings)) state.personA.bloodPressure.readings = [];
+  state.personA.bloodPressure.readings.push({ts:new Date().toISOString(), sys:sys, dia:dia});
+  document.getElementById('bpSys').value = '';
+  document.getElementById('bpDia').value = '';
+  save();
+  renderBPModule();
+  showToast('血压已记录：' + sys + ' / ' + dia);
+}
+
+// --- 今日任务 ---
+function getSlotMeta(slot){
+  if(slot==='mock') return {name:'粉笔模考',color:'#C05757',special:'mock'};
+  if(slot==='review') return {name:'复习',color:'#C4A46B',special:'review'};
+  return SCHEDULE_META[slot] || null;
+}
+function renderTodayTasks(){
+  const today = todayStr();
+  const dayIndex = (parseDate(today).getDay()+6)%7;
+  const isSunday = dayIndex === 6;
+  const tasks = [];
+
+  WEEKLY_SCHEDULE.forEach(s=>{
+    const slot = s.slots[dayIndex];
+    if(slot==='rest') return;
+    if(slot==='mock'){
+      tasks.push({id:'mock-'+s.time,text:isSunday?'粉笔模考（行测+申论）':'全真模拟 / 真题套卷',time:s.time,tag:'模拟',color:'#C05757'});
+      return;
+    }
+    if(slot==='review'){
+      let label = '复习总结 + 错题回顾';
+      if(isSunday){
+        if(s.time==='11:00-12:00') label = '行测模考复盘';
+        else if(s.time==='14:00-16:00') label = '申论模考复盘 + 错题分析';
+        else if(s.time==='16:00-17:30') label = '弱项专项训练';
+      }
+      tasks.push({id:'review-'+s.time,text:label,time:s.time,tag:'复习',color:'#C4A46B'});
+      return;
+    }
+    const meta = SCHEDULE_META[slot];
+    if(meta){
+      let text = meta.name + '（' + meta.desc + '）';
+      if(slot==='politics' && s.time==='07:20-07:50') text = '政治理论 — 观看视频 + 总结';
+      if(slot==='shenlun'){const ph=getShenlunPhase();text='申论【'+ph.name+'】— '+ph.desc+'（'+ph.time+'）';}
+      tasks.push({id:slot+'-'+s.time,text:text,time:s.time,tag:meta.name,color:meta.color});
+    }
+  });
+
+  const stateKey = today;
+  if(!state.shared.tasks[stateKey]) state.shared.tasks[stateKey] = {};
+
+  const list = document.getElementById('todayTasks');
+  if(tasks.length===0){
+    list.innerHTML = '<li style="text-align:center;padding:20px;color:var(--text3);">今天没有安排任务，休息一下也很重要。</li>';
+  }else{
+    list.innerHTML = tasks.map((t,i)=>{
+      const tid = t.id+'-'+i;
+      const done = state.shared.tasks[stateKey][tid];
+      return `<li class="task-item ${done?'done':''}" onclick="toggleTask('${stateKey}','${tid}')">
+        <div class="task-checkbox">✓</div>
+        <span class="task-text">${t.text}</span>
+        ${t.time?`<span class="task-time">${t.time}</span>`:''}
+        ${t.tag?`<span class="task-tag" style="background:${t.color}">${t.tag}</span>`:''}
+      </li>`;
+    }).join('');
+  }
+  const tips = [
+    '每天进步一点点，几个月后你会感谢现在的自己。',
+    '申论是写出来的，不是看出来的。今天动笔了吗？',
+    '资料分析关键是速度 + 准确率，每天都要练手感。',
+    '图推做多了就有题感，坚持每天几道题。',
+    '穿插学习法：每天每科都练，比单科连刷更抗遗忘。',
+    '和你一起努力的人，也在另一个城市加油。',
+    '小硕咪和秋秋，一起上岸。'
+  ];
+  document.getElementById('todayTip').textContent = tips[new Date().getDate()%tips.length];
+}
+function toggleTask(date,taskId){
+  state.shared.tasks[date][taskId] = !state.shared.tasks[date][taskId];
+  save();
+  renderTodayTasks();
+}
+
+// --- 阶段 ---
+function getShenlunPhase(){
+  const t = todayStr();
+  for(let i=SHENLUN_PHASES.length-1;i>=0;i--){if(t>=SHENLUN_PHASES[i].start) return SHENLUN_PHASES[i];}
+  return SHENLUN_PHASES[0];
+}
+function getCurrentPhase(){
+  const t = todayStr();
+  for(let i=PHASES.length-1;i>=0;i--){if(t>=PHASES[i].start) return PHASES[i];}
+  return PHASES[0];
+}
+function renderPhaseCard(){
+  const ph = getCurrentPhase();
+  const isZhuji = ph.id==='zhuji';
+  let sumPct = 0;
+  MODULES.forEach(m=>{const cur=curModules()[m.id]||0; sumPct += Math.min(cur/m.total,1);});
+  const avgPct = Math.round(sumPct/MODULES.length*100);
+  const allDone = MODULES.every(m=>((curModules()[m.id]||0)>=m.total));
+  let progressBlock = '';
+  if(isZhuji){
+    progressBlock = `
+      <div class="card-sub" style="text-align:left;margin-top:10px;">筑基期模块总进度</div>
+      <div class="overall-bar"><div class="overall-bar-fill" style="width:${avgPct}%"></div></div>
+      <div class="card-sub" style="text-align:left;margin-top:6px;color:var(--warm);">${avgPct}% ${allDone?'· 全部模块已完成，可转入精进期':'· 各模块点击「+1」记录每日学习'}</div>`;
+  }
+  document.getElementById('phaseCard').innerHTML = `
+    <div class="card-head"><h3>当前阶段 · ${ph.name}</h3></div>
+    <p class="card-sub" style="text-align:left;margin-bottom:0;">${ph.focus}</p>
+    <div class="card-sub" style="text-align:left;margin-top:6px;">${ph.start} → ${ph.end}</div>
+    <div class="phase-track">
+      ${PHASES.map(p=>{
+        const active = p.id===ph.id;const past=p.end<todayStr();
+        return `<span class="${active?'active':past?'past':''}">${p.name}</span>`;
+      }).join('')}
+    </div>
+    ${progressBlock}`;
+}
+
+// --- 课表（筑基期每日，穿插学习法） ---
+function schedRow(time, slot, isSunday){
+  if(slot==='mock') return `<tr><td class="sched-time">${time}</td><td><span class="chip" style="background:#C05757">粉笔模考</span></td><td class="sched-note">行测+申论 全真模拟</td></tr>`;
+  if(slot==='review'){
+    let note='复习总结 + 错题回顾';
+    if(isSunday){
+      if(time==='11:00-12:00') note='行测模考复盘';
+      else if(time==='14:00-16:00') note='申论模考复盘 + 错题分析';
+      else if(time==='16:00-17:30') note='弱项专项训练';
+    }
+    return `<tr><td class="sched-time">${time}</td><td><span class="chip" style="background:#C4A46B">复习</span></td><td class="sched-note">${note}</td></tr>`;
+  }
+  const meta = SCHEDULE_META[slot];
+  if(!meta) return '';
+  return `<tr><td class="sched-time">${time}</td><td><span class="chip" style="background:${meta.color}">${meta.name}</span></td><td class="sched-note">${meta.desc||''}</td></tr>`;
+}
+function renderSchedule(){
+  let weekday='<table class="sched-table">';
+  WEEKLY_SCHEDULE.forEach(r=>{ if(r.slots[0]!=='rest') weekday += schedRow(r.time, r.slots[0], false); });
+  weekday+='</table>';
+  let sunday='<table class="sched-table">';
+  WEEKLY_SCHEDULE.forEach(r=>{ if(r.slots[6]!=='rest') sunday += schedRow(r.time, r.slots[6], true); });
+  sunday+='</table>';
+  document.getElementById('scheduleCard').innerHTML = `
+    <div class="card-head"><h3>筑基期 · 每日课表</h3></div>
+    <p class="card-sub">穿插学习法：每天每科都练，避免单科疲劳；早晨记忆政治，晚间按模块推进。言语/夸夸刷等较早完成的模块，腾出时间回流到图推/数量。</p>
+    <div class="sched-title">周一至周六</div>${weekday}
+    <div class="sched-title">周日（上午粉笔模考）</div>${sunday}`;
+}
+
+function renderShenlunPhaseCard(){
+  const ph = getShenlunPhase();
+  document.getElementById('shenlunPhaseCard').innerHTML = `
+    <div class="card-head"><h3>申论四阶段递进</h3></div>
+    <p class="card-sub" style="text-align:left;">仅练国考 / 省考原题 · 筑基期内执行</p>
+    <div class="phase-track" style="margin-top:10px;">
+      ${SHENLUN_PHASES.map(p=>{
+        const active=p.id===ph.id;const past=p.end<todayStr();
+        return `<div class="phase-block ${active?'active':past?'past':''}"><b>${p.name}</b>${p.desc}<div class="pb-time">${p.time}</div></div>`;
+      }).join('')}
+    </div>
+    <p class="card-sub" style="text-align:left;margin-top:10px;">当前：<b style="color:var(--ink)">${ph.name}</b> · ${ph.detail}</p>`;
+}
+
+// --- 科目（进度条模块，点击 +1，按当前查看者独立） ---
+function renderModules(){
+  const k = curKicker();
+  const kEl = document.getElementById('subjKicker');
+  if(kEl){kEl.textContent=k.name;kEl.className='card-kicker '+k.cls;}
+  const list = document.getElementById('moduleList');
+  let html = MODULES.map(m=>{
+    const cur = curModules()[m.id] || 0;
+    const pct = Math.round(Math.min(cur/m.total,1)*100);
+    const done = cur >= m.total;
+    const fillColor = done ? 'rgba(91,140,90,.12)' : m.color + '1A';
+    return `<div class="module-card ${done?'done':''}" style="border-left-color:${m.color}" onclick="studyOnce('${m.id}')">
+      <div class="module-fill" style="width:${pct}%;background:${fillColor}"></div>
+      <div class="module-content">
+        <div class="module-top">
+          <div class="module-name">${m.name}</div>
+          ${done?'<span class="module-done-badge">✓ 已完成</span>':'<span class="module-group">'+m.group+'</span>'}
+        </div>
+        <div class="module-teacher">${m.teacher} · ${m.desc}</div>
+        <div class="module-bar"><div class="module-bar-fill" style="width:${pct}%;background:${m.color}"></div></div>
+        <div class="module-meta">
+          <span>${m.per}</span>
+          <span class="module-pct" style="color:${done?'var(--success)':m.color}">${cur}/${m.total} · ${pct}%</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  // —— 自定义进度条（仅当前身份可见，各自独立定义与进度）——
+  const removed = new Set(curPerson().removedCustom||[]);
+  const customs = curCustomModules().filter(c=>!removed.has(c.id));
+  if(customs.length){
+    html += '<div class="module-section-title">自定义进度条（仅本人可见 · 各自独立）</div>';
+    html += customs.map(c=>{
+      const prog = curCustomProgress();
+      const cur = prog[c.id]||0;
+      const pct = Math.round(Math.min(cur/c.total,1)*100);
+      const done = cur >= c.total;
+      const color = c.color || '#B07D52';
+      const meta = [c.teacher, c.method, c.time].filter(Boolean).join(' · ');
+      return `<div class="module-card ${done?'done':''}" style="border-left-color:${color}" onclick="studyCustom('${c.id}')">
+        <div class="module-fill" style="width:${pct}%;background:${done?'rgba(91,140,90,.12)':color+'1A'}"></div>
+        <button class="module-del" onclick="event.stopPropagation();delCustomModule('${c.id}')" title="删除该自定义进度条">✕</button>
+        <div class="module-content">
+          <div class="module-top">
+            <div class="module-name">${c.name}</div>
+            ${done?'<span class="module-done-badge">✓ 已完成</span>':'<span class="module-group">自定义</span>'}
+          </div>
+          ${meta?'<div class="module-teacher">'+meta+'</div>':''}
+          <div class="module-bar"><div class="module-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+          <div class="module-meta">
+            <span>每次 +${c.step} · 总量 ${c.total}</span>
+            <span class="module-pct" style="color:${done?'var(--success)':color}">${cur}/${c.total} · ${pct}%</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  list.innerHTML = html;
+}
+function studyOnce(id){
+  const m = MODULES.find(x=>x.id===id);
+  const cur = curModules()[id] || 0;
+  if(cur >= m.total){showToast(m.name + ' 已完成（' + m.total + '次），温故即可');return;}
+  curModules()[id] = cur + 1;
+  save();
+  renderModules();
+  const pct = Math.round(Math.min((cur+1)/m.total,1)*100);
+  showToast(m.name + ' 进度 +1（' + (cur+1) + '/' + m.total + ' · ' + pct + '%）');
+}
+
+// --- 自定义进度条（用户自行添加；定义共享、进度按人独立） ---
+function openAddCustom(){
+  const html = `
+    <h3 style="margin:0 0 6px;color:var(--warm);">添加自定义进度条</h3>
+    <p class="card-sub" style="margin:0 0 14px;">填写下列信息即可生成与默认模块一致的进度条。该进度条仅当前身份（小硕咪 / 秋秋）可见，两人各自独立定义与记录进度。</p>
+    <label class="form-label">学习内容（名称）<span style="color:var(--danger)">*</span></label>
+    <input id="cmName" class="form-input" placeholder="如：申论大作文精练" maxlength="20">
+    <label class="form-label" style="margin-top:12px;">教师</label>
+    <input id="cmTeacher" class="form-input" placeholder="如：袁东" maxlength="20">
+    <label class="form-label" style="margin-top:12px;">学习方式</label>
+    <input id="cmMethod" class="form-input" placeholder="如：精做精析 + 对照范文" maxlength="30">
+    <label class="form-label" style="margin-top:12px;">学习时间</label>
+    <input id="cmTime" class="form-input" placeholder="如：20:40-21:00" maxlength="20">
+    <label class="form-label" style="margin-top:12px;">学习总量（目标总数）<span style="color:var(--danger)">*</span></label>
+    <input id="cmTotal" class="form-input" type="number" min="1" placeholder="如：30">
+    <label class="form-label" style="margin-top:12px;">每次点击完成量（每日内容，默认 1）</label>
+    <input id="cmStep" class="form-input" type="number" min="1" value="1" placeholder="点击一次算完成几组">
+    <div class="sync-bar" style="margin-top:18px;">
+      <button class="btn btn-sm btn-primary" onclick="saveCustomModule()">生成进度条</button>
+      <button class="btn btn-sm btn-secondary" onclick="closeModal()">取消</button>
+    </div>`;
+  openModal(html);
+}
+function saveCustomModule(){
+  const name = (document.getElementById('cmName').value||'').trim();
+  const teacher = (document.getElementById('cmTeacher').value||'').trim();
+  const method = (document.getElementById('cmMethod').value||'').trim();
+  const time = (document.getElementById('cmTime').value||'').trim();
+  const total = parseInt(document.getElementById('cmTotal').value,10);
+  let step = parseInt(document.getElementById('cmStep').value,10);
+  if(!name){ showToast('请填写学习内容（名称）'); return; }
+  if(isNaN(total) || total<=0){ showToast('请填写有效的学习总量（大于0）'); return; }
+  if(isNaN(step) || step<1) step = 1;
+  const id = 'c'+Date.now();
+  const colors = ['#B07D52','#7E97B3','#8BAE7C','#C4A46B','#A487AE','#7FB0A1','#C2917F','#5E9C8B'];
+  const p = curPerson();
+  const list = p.customModules||[];
+  const color = colors[list.length%colors.length];
+  if(!p.customModules) p.customModules = [];
+  if(!p.removedCustom) p.removedCustom = [];
+  if(!p.customProgress) p.customProgress = {};
+  p.customModules.push({id,name,teacher,method,time,total,step,color});
+  p.customProgress[id] = 0;
+  save();
+  closeModal();
+  renderModules();
+  showToast('已添加自定义进度条：'+name);
+}
+function studyCustom(id){
+  const p = curPerson();
+  if(!p.customModules) return;
+  const c = p.customModules.find(x=>x.id===id);
+  if(!c) return;
+  if(!p.customProgress) p.customProgress = {};
+  const prog = p.customProgress;
+  const cur = prog[id]||0;
+  if(cur >= c.total){ showToast(c.name + ' 已完成（' + c.total + '），温故即可'); return; }
+  prog[id] = Math.min(cur + (c.step||1), c.total);
+  save();
+  renderModules();
+  const pct = Math.round(Math.min(prog[id]/c.total,1)*100);
+  showToast(c.name + ' 进度 +' + (c.step||1) + '（' + prog[id] + '/' + c.total + ' · ' + pct + '%）');
+}
+function delCustomModule(id){
+  if(!confirm('确定删除该自定义进度条？仅当前身份（'+curKicker().name+'）的进度会删除，另一人不受影响（不可恢复）。')) return;
+  const p = curPerson();
+  if(!p.customModules) p.customModules = [];
+  if(!p.removedCustom) p.removedCustom = [];
+  p.customModules = p.customModules.filter(x=>x.id!==id);
+  if(!p.removedCustom.includes(id)) p.removedCustom.push(id);
+  if(p.customProgress) delete p.customProgress[id];
+  save();
+  renderModules();
+  showToast('已删除自定义进度条');
+}
+
+// --- 统计（按当前查看者独立） ---
+function renderStats(){
+  const k = curKicker();
+  const kA = document.getElementById('statsKickerA');
+  const kB = document.getElementById('statsKickerB');
+  if(kA){kA.textContent=k.name;kA.className='card-kicker '+k.cls;}
+  if(kB){kB.textContent=k.name;kB.className='card-kicker '+k.cls;}
+
+  renderScoreChart();
+  renderWrongTopics();
+}
+
+// 模考成绩曲线图：按考试类型分色（行测实线 / 申论同色虚线）
+function renderScoreChart(){
+  const wrap = document.getElementById('scoreChartWrap');
+  const scores = [...curScores()];
+  if(scores.length===0){
+    wrap.innerHTML = '<div class="empty-state" style="padding:14px 0;"><p style="font-size:12px;">还没有模考成绩，点「+ 添加」即可生成趋势曲线。</p></div>';
+    return;
+  }
+  // 各考试类型配色
+  const examColor = {guokao:'#7E97B3', gdshengkao:'#C4A46B', hbshengkao:'#7FA37F', gdsydw:'#A78BC4'};
+  // 横轴忽略时间，直接按累计次数（第N次）排列
+  const maxCount = Math.max(1, ...EXAMS.map(e=>scores.filter(s=>s.exam===e.id).length));
+  const labels = Array.from({length:maxCount},(_,i)=>'第'+(i+1)+'次');
+  const datasets = [];
+  EXAMS.forEach(e=>{
+    const recs = scores.filter(s=>s.exam===e.id);
+    if(recs.length===0) return;
+    const color = examColor[e.id] || '#999';
+    datasets.push({
+      label: e.name+' · 行测',
+      data: recs.map(r=>r.xingce),
+      borderColor: color, backgroundColor: color+'18', fill:false,
+      tension:0.3, pointRadius:3, pointBackgroundColor:color, borderWidth:2, spanGaps:true
+    });
+    const hasSl = recs.some(r=>r.shenlun!=null);
+    if(hasSl){
+      datasets.push({
+        label: e.name+' · 申论',
+        data: recs.map(r=> r.shenlun!=null?r.shenlun:null),
+        borderColor: color, dashed:true
+      });
+    }
+  });
+  wrap.innerHTML = '<div id="scoreChart"></div><div class="score-cap">已记录 '+scores.length+' 条成绩（'+curKicker().name+'）</div>';
+  setTimeout(()=>{
+    const el = document.getElementById('scoreChart');
+    if(!el) return;
+    try{
+      el.innerHTML = svgLineChart({labels,datasets,yMin:0,yMax:100,yStep:20});
+    }catch(err){
+      wrap.innerHTML = '<div class="empty-state" style="padding:14px 0;"><p style="font-size:12px;">图表渲染失败：'+(err&&err.message?err.message:'未知错误')+'</p></div>';
+    }
+  },60);
+}
+
+// 错题知识点统计（标签矩阵，按当前查看者独立）
+function wrongColor(count){
+  const t = Math.min(count,8)/8;
+  const light = 82 - t*44;
+  return `hsl(5, 58%, ${light}%)`;
+}
+function renderWrongTopics(){
+  const list = document.getElementById('wrongList');
+  const arr = [...curWrong()];
+  if(arr.length===0){
+    list.innerHTML = '<div class="empty-state"><p>暂无错题标签，点「+ 新标签」添加</p></div>';
+    return;
+  }
+  arr.sort((a,b)=>b.count-a.count);
+  let html = arr.map(w=>{
+    const bg = wrongColor(w.count);
+    return `<button class="wrong-tag" style="background:${bg}" onclick="incWrongTopic('${w.id}')">${w.topic}<span class="wt-count">${w.count}</span></button>`;
+  }).join('');
+  html += `<button class="wrong-tag wrong-add" onclick="openAddWrong()">+ 新标签</button>`;
+  list.innerHTML = html;
+}
+function incWrongTopic(id){
+  const list = curWrong();
+  const w = list.find(x=>x.id===id);
+  if(w){w.count++;save();renderWrongTopics();showToast('「'+w.topic+'」错题 +1（共 '+w.count+' 次）');}
+}
+function openAddWrong(){
+  const subjOpts = MODULES.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+  openModal(`
+    <h3>添加错题标签</h3>
+    <select id="awSubj">${subjOpts}</select>
+    <input id="awTopic" placeholder="知识点（如：增长率比较）">
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="doAddWrong()">添加</button>
+    </div>`);
+}
+function doAddWrong(){
+  const subject=document.getElementById('awSubj').value;
+  const topic=document.getElementById('awTopic').value.trim();
+  if(!topic){showToast('请输入知识点');return;}
+  const list = curWrong();
+  if(list.some(w=>w.topic.toLowerCase()===topic.toLowerCase())){
+    showToast('该标签已存在，点击标签即可 +1');
+    closeModal();
+    renderWrongTopics();
+    return;
+  }
+  list.push({id:'w'+Date.now(),subject,topic,count:1});
+  save();closeModal();renderWrongTopics();showToast('错题标签已添加');
+}
+
+function openAddScore(){
+  const examOpts = EXAMS.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  openModal(`
+    <h3>添加模考成绩</h3>
+    <select id="asExam">${examOpts}</select>
+    <input id="asXc" type="number" placeholder="行测分数" min="0" max="100">
+    <input id="asSl" type="number" placeholder="申论分数（事业编可不填）" min="0" max="100">
+    <input id="asDate" type="date" value="${todayStr()}">
+    <input id="asNote" placeholder="备注（可选）">
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="doAddScore()">添加</button>
+    </div>`);
+}
+function doAddScore(){
+  const exam=document.getElementById('asExam').value;
+  const xc=parseInt(document.getElementById('asXc').value);
+  const slV=document.getElementById('asSl').value;
+  const date=document.getElementById('asDate').value;
+  const note=document.getElementById('asNote').value;
+  if(isNaN(xc)){showToast('请输入行测分数');return;}
+  curScores().push({id:'s'+Date.now(),exam,xingce:xc,shenlun:slV?parseInt(slV):null,date,note});
+  save();closeModal();renderStats();showToast('成绩已记录');
+}
+
+// ============ 新闻 ============
+const NEWS_KEY = 'kaogong_news_cache_v2';
+const NEWS_SRC_PREFIX = 'kaogong_news_src_v2_';
+const NEWS_TTL = 6*60*60*1000;
+// 新闻来源（可直接点来源筛选）。均为服务端实测可直连的真实订阅源：
+//   荔枝网 → 广东台 gdnews.xml（官方 RSS）；
+//   新华社 → 新华网·时政频道（官方 RSS）；
+//   人民日报 → 人民网·时政频道（官方 RSS）；
+//   南方日报 → 官网无公开 RSS，映射到人民网·社会频道（民生/区域相关，最接近），失败回落时政。
+// feeds[0] 优先，失败自动回落 feeds[1]，绝不整源空白。
+const NEWS_SOURCES = [
+  {name:'荔枝网',   feeds:['https://news.gdtv.cn/rss/gdnews.xml']},
+  {name:'新华社',   feeds:['http://www.xinhuanet.com/politics/news_politics.xml']},
+  {name:'人民日报', feeds:['http://www.people.com.cn/rss/politics.xml']},
+  {name:'南方日报', feeds:['http://www.people.com.cn/rss/society.xml','http://www.people.com.cn/rss/politics.xml']}
+];
+const FALLBACK_NEWS = [
+  {title:'2026年中央一号文件发布 全面推进乡村振兴',source:'人民日报',cat:'时政',url:'#',desc:'2026年中央一号文件正式发布，对全面推进乡村振兴、加快农业农村现代化作出系统部署，提出保障粮食安全、巩固拓展脱贫攻坚成果、建设宜居宜业和美乡村等重点任务。'},
+  {title:'上半年GDP同比增长5.2% 经济回升向好态势持续巩固',source:'人民日报',cat:'经济',url:'#',desc:'统计数据显示，上半年国内生产总值同比增长5.2%，国民经济延续回升向好态势，生产需求稳步恢复，就业物价总体稳定，高质量发展扎实推进。'},
+  {title:'全国夏粮再获丰收 总产量创历史新高',source:'人民日报',cat:'民生',url:'#',desc:'农业农村部消息，今年全国夏粮收购进入高峰，主产区小麦质量普遍好于上年，总产量再创历史新高，为全年粮食稳产保供打下坚实基础。'},
+  {title:'广东：推动粤港澳大湾区建设取得新突破',source:'荔枝网',cat:'区域',url:'#',desc:'广东省部署推进粤港澳大湾区建设，围绕规则衔接、机制对接、基础设施互联互通、产业协同创新等方面持续发力，打造高质量发展的重要动力源。'},
+  {title:'国务院常务会议研究部署稳就业工作',source:'人民日报',cat:'时政',url:'#',desc:'国务院常务会议听取稳就业情况汇报，研究优化调整稳就业政策措施，强调加大对高校毕业生、农民工、退役军人等重点群体就业帮扶力度。'},
+  {title:'我国数字经济规模突破60万亿元',source:'人民日报',cat:'科技',url:'#',desc:'最新报告显示，我国数字经济规模突破60万亿元，占GDP比重持续提升，数字技术与实体经济深度融合，成为稳增长、促转型的重要引擎。'}
+];
+const CAT_COLORS = {时政:'#C05757',经济:'#C4A46B',民生:'#5B8C5A',科技:'#7E97B3',区域:'#9C8BB0',法治:'#8C8C8C',生态:'#7FB0A1',文化:'#A487AE'};
+// 考试相关标签颜色
+const EXAM_COLORS = {国考:'#C05757',广东省考:'#5B8C5A',湖北省考:'#7E97B3'};
+// 解析 RSS / Atom 文本为统一条目
+function textOf(node, tag){
+  let el=null;
+  try{ el=node.querySelector(tag); }catch(e){}
+  if(!el){ const g=node.getElementsByTagName(tag); if(g&&g.length) el=g[0]; }
+  if(!el) return '';
+  return (el.textContent||el.innerHTML||'').trim();
+}
+function parseRSS(text){
+  const out=[];
+  try{
+    const doc=new DOMParser().parseFromString(text,'text/xml');
+    const nodes=doc.querySelectorAll('item, entry');
+    nodes.forEach(n=>{
+      const title=textOf(n,'title');
+      if(!title) return;
+      const linkEl=n.querySelector('link');
+      let link='';
+      if(linkEl) link=linkEl.getAttribute('href')||linkEl.textContent||'';
+      const pub=textOf(n,'pubDate')||textOf(n,'published')||textOf(n,'updated')||'';
+      const desc=textOf(n,'description')||textOf(n,'summary')||textOf(n,'content')||textOf(n,'content:encoded')||'';
+      out.push({title:title, link:link, pubDate:pub, description:desc});
+    });
+  }catch(e){}
+  return out;
+}
+// 单源多通道抓取：rss2json → 直连(CORS) → allorigins
+async function tryProviders(feed){
+  const enc=encodeURIComponent(feed);
+  const providers=[
+    async()=>{
+      const r=await fetch('https://api.rss2json.com/v1/api.json?rss_url='+enc);
+      const d=await r.json();
+      if(d&&d.items&&d.items.length) return d.items.map(it=>({title:it.title||'',link:it.link||'',pubDate:it.pubDate||'',description:it.description||it.content||''}));
+      throw new Error('rss2json empty');
+    },
+    async()=>{
+      const r=await fetch(feed,{mode:'cors'});
+      if(!r.ok) throw new Error('direct '+r.status);
+      const t=await r.text();
+      const items=parseRSS(t);
+      if(items.length) return items;
+      throw new Error('direct parse empty');
+    },
+    async()=>{
+      const r=await fetch('https://api.allorigins.win/raw?url='+enc);
+      if(!r.ok) throw new Error('allorigins '+r.status);
+      const t=await r.text();
+      const items=parseRSS(t);
+      if(items.length) return items;
+      throw new Error('allorigins parse empty');
+    }
+  ];
+  for(const p of providers){
+    try{ const items=await p(); if(items&&items.length) return items; }catch(e){}
+  }
+  return null;
+}
+// 逐 feed 尝试（feeds[0] 优先，失败回落 feeds[1]），任一成功即返回
+async function fetchOneSource(src){
+  const feedList = (src.feeds && src.feeds.length) ? src.feeds : [src.feed];
+  for(const feed of feedList){
+    try{
+      const items=await tryProviders(feed);
+      if(items&&items.length) return items;
+    }catch(e){}
+  }
+  return null;
+}
+// 逐源抓取 + 每源独立缓存（某源失败则回退到上次成功内容，绝不整页空白）
+async function collectNews(){
+  let combined=[];
+  const collectedAt = Date.now();
+  for(const src of NEWS_SOURCES){
+    const raw=await fetchOneSource(src);
+    if(raw&&raw.length){
+      const classified = raw.slice(0,12).map(it=>{
+        const c = classifyNews(it.title||'', it.description||'');
+        if(!c.relevant) return null;
+        const text = (it.title||'')+(it.description||'');
+        return { title:stripTags(it.title)||'(无标题)', source:src.name, cat:c.cat, exams:tagExams(text, c.cat), url:it.link||'#', time:pickNewsTime(it.pubDate, collectedAt), desc:it.description||'' };
+      }).filter(Boolean);
+      if(classified.length){
+        try{ localStorage.setItem(NEWS_SRC_PREFIX+src.name, JSON.stringify({time:Date.now(), items:classified})); }catch(e){}
+        combined=combined.concat(classified);
+      }else{
+        try{
+          const c=JSON.parse(localStorage.getItem(NEWS_SRC_PREFIX+src.name)||'{}');
+          if(c.items&&c.items.length) combined=combined.concat(c.items);
+        }catch(e){}
+      }
+    }else{
+      try{
+        const c=JSON.parse(localStorage.getItem(NEWS_SRC_PREFIX+src.name)||'{}');
+        if(c.items&&c.items.length) combined=combined.concat(c.items);
+      }catch(e){}
+    }
+  }
+  // 去重（同标题只保留一条）
+  const seen=new Set();
+  combined=combined.filter(i=>{ const k=(i.title||'').trim(); if(!k||seen.has(k)) return false; seen.add(k); return true; });
+  if(combined.length){
+    try{ localStorage.setItem(NEWS_KEY, JSON.stringify({time:Date.now(), items:combined.slice(0,50)})); }catch(e){}
+    return combined.slice(0,50);
+  }
+  return FALLBACK_NEWS.map(i=>({...i, time:i.time||Date.now()}));
+}
+async function fetchNews(){
+  const cached=localStorage.getItem(NEWS_KEY);
+  if(cached){
+    try{
+      const o=JSON.parse(cached);
+      if(o.time && (Date.now()-o.time)<NEWS_TTL && o.items && o.items.length>0) return o.items;
+    }catch(e){}
+  }
+  return await collectNews();
+}
+// 8 大分类关键词（与历年申论 / 政治理论主题对齐）
+const CAT_KEYWORDS = {
+  时政:['习近平','总书记','党中央','国务院','政治局','中央','两会','人大','政协','全会','会议','讲话','指示','精神','部署','文件','通知','意见','规划','纲要','改革','决策','方针','政策','党建','党史','从严治党','主题教育','巡视','反腐','外交','一带一路','命运共同体','政府工作报告','二十大','二十届','四中全会','五中全会','治国理政'],
+  经济:['经济','GDP','增长','财政','税收','金融','货币','央行','投资','消费','外贸','出口','进口','产业','制造','实体','民营','国企','营商','市场','供给','需求','就业','物价','通胀','高质量发展','双循环','自贸','科创','数字经济','新能源','房地产','产业链','供应链'],
+  民生:['民生','就业','教育','医疗','医保','养老','社保','住房','保障','脱贫','扶贫','乡村振兴','农业','农村','农民','粮食','收入','食品安全','公共服务','托育','生育','社区','基层治理','低保','救助','健康','卫生','供水','供暖'],
+  科技:['科技','创新','研发','芯片','人工智能','AI','数字','5G','6G','量子','航天','卫星','北斗','高铁','电池','智能','大数据','云计算','互联网','平台','算法','基础研究','成果转化','专精特新','制造强国','网络强国','算力','无人机','机器人'],
+  区域:['区域','大湾区','粤港澳','长三角','京津冀','成渝','中部','西部','东北','沿海','广东','深圳','广州','北京','上海','协调发展','一体化','城市群','都市圈','对口支援','特区','新区','自贸试验区','县域','城乡','省份'],
+  法治:['法治','法律','立法','司法','法院','检察','宪法','法规','条例','执法','普法','法治政府','依法治','监察','合规','权益','公平','正义','审判','律师','民法典','刑法','治理'],
+  生态:['生态','环境','绿色','低碳','碳','污染','环保','节能','减排','双碳','碳达峰','碳中和','山水','林草','河长','空气','水质','自然','保护','修复','流域','长江','黄河','生物多样性'],
+  文化:['文化','文明','自信','传统','非遗','文物','遗产','文艺','出版','媒体','舆论','意识形态','价值观','道德','红色','宣讲','新时代','精神']
+};
+// 排除：与申论 / 政治理论关联度低、纯资讯噪声的新闻
+const EXCLUDE_NEWS = /娱乐|明星|综艺|影视|电影|电视剧|票房|演唱会|网红|八卦|彩票|天气|气温|降雨|降水|台风|暴雨|高温|寒潮|地震|海啸|车祸|火灾|爆炸|遇难|身亡|坠楼|失踪|逮捕|通缉|诈骗|股市|大盘|基金净值|期货行情|旅游|景区|民宿|美食|餐厅|相亲|招聘|求职|促销|打折|直播带货|体育赛事|球赛|奥运|夺冠|比分/;
+// 兜底：即便未命中具体分类，只要含明显时政词也保留并归为「时政」
+const GENERIC_POLITICAL = /党|中央|国家|政府|中国|发展|改革|建设|会议|部署|习近平|总书记|国务院/;
+function classifyNews(title, desc){
+  const text = (title||'') + (desc||'');
+  if(EXCLUDE_NEWS.test(text)) return {cat:null, relevant:false};
+  let best=null, bestScore=0;
+  for(const cat in CAT_KEYWORDS){
+    let score=0;
+    for(const kw of CAT_KEYWORDS[cat]){ if(text.indexOf(kw)>=0) score++; }
+    if(score>bestScore){ bestScore=score; best=cat; }
+  }
+  if(best) return {cat:best, relevant:true};
+  if(GENERIC_POLITICAL.test(text)) return {cat:'时政', relevant:true};
+  return {cat:null, relevant:false};
+}
+// 考试相关标注：国考(全国统招，覆盖时政/经济/法治/生态/文化等宏观主题) + 区域考(命中地名)
+function tagExams(text, cat){
+  const exams=[];
+  if(/广东|大湾区|粤港澳|珠三角|深圳|广州|粤|南沙/.test(text)) exams.push('广东省考');
+  if(/湖北|武汉|鄂(?!尔多斯)/.test(text)) exams.push('湖北省考');
+  // 国考：只要是时政/经济/法治/生态/文化/区域/民生类且与国家治理相关，均属国考范围
+  if(/国考|国家|全国|中央|国务院|人大|政协|习近平|总书记|部委|国务院|政治局|党中央|政府工作|规划|纲要|改革|政策|法律|立法|生态|双碳|民生|乡村振兴|高质量发展/.test(text)
+     || ['时政','经济','法治','生态','文化','区域'].includes(cat)){
+    exams.push('国考');
+  }
+  if(exams.length===0) exams.push('国考');
+  // 去重保序
+  return exams.filter((v,i)=>exams.indexOf(v)===i);
+}
+function stripTags(s){
+  if(!s) return '';
+  const d=document.createElement('div');
+  d.innerHTML=s;
+  return (d.textContent||d.innerText||'').replace(/\s+/g,' ').trim();
+}
+// —— 新闻条目 HTML ——
+function newsItemHTML(item, idx, mode){
+  const timeStr = formatNewsDate(item.time);
+  const summary = stripTags(item.desc);
+  const catColor = CAT_COLORS[item.cat]||'#999';
+  const catLabel = item.cat||'时政';
+  const exams = (item.exams&&item.exams.length)?item.exams:['国考'];
+  const examTags = exams.map(e=>`<span class="news-exam ${e}">${e}</span>`).join('');
+  if(mode==='home'){
+    return `<div class="news-item" onclick="toggleNewsSummary(${idx})">
+      <div class="news-meta">
+        <span class="news-tag" style="background:${catColor}">${catLabel}</span>
+        ${examTags}
+        <span class="news-source">${item.source}${timeStr?' · '+timeStr:''}</span>
+      </div>
+      <div class="news-title">${item.title}</div>
+      ${summary?`<div class="news-summary" id="ns${idx}">${summary}</div>`:''}
+    </div>`;
+  }
+  return `<div class="news-item" style="cursor:default;">
+    <div class="news-meta" style="margin-bottom:7px;">
+      <span class="news-tag" style="background:${catColor}">${catLabel}</span>
+      ${examTags}
+      <span class="news-source">${item.source}${timeStr?' · '+timeStr:''}</span>
+    </div>
+    <div class="news-title" style="font-weight:600;">${item.title}</div>
+    ${summary?`<div class="news-summary expanded">${summary}</div>`:''}
+    <a class="news-read" href="${item.url}" target="_blank" rel="noopener">阅读全文 ↗</a>
+  </div>`;
+}
+function newsItemsNow(){
+  try{
+    const c=JSON.parse(localStorage.getItem(NEWS_KEY)||'{}');
+    if(c.items && c.items.length) return c.items;
+  }catch(e){}
+  return FALLBACK_NEWS.map(i=>({...i, time:i.time||Date.now()}));
+}
+async function refreshNewsData(){
+  try{ const items=await fetchNews(); return (items&&items.length)?items:null; }catch(e){ return null; }
+}
+// 首页「时政要闻」：先显示缓存/兜底，再后台刷新
+function renderNews(){
+  const list = document.getElementById('newsList');
+  if(!list) return;
+  const items = newsItemsNow();
+  list.innerHTML = items.slice(0,8).map((it,i)=>newsItemHTML(it,i,'home')).join('');
+  refreshNewsData().then(fresh=>{ if(fresh&&fresh.length) list.innerHTML = fresh.slice(0,8).map((it,i)=>newsItemHTML(it,i,'home')).join(''); });
+}
+function toggleNewsSummary(idx){
+  const el=document.getElementById('ns'+idx);
+  if(el) el.classList.toggle('expanded');
+}
+// 新闻页：按来源筛选 + 完整摘要 + 阅读全文（先显缓存，再刷新）
+let newsSourceFilter = '全部';
+function renderNewsPage(){
+  const hint=document.getElementById('newsAutoHint');
+  if(hint) hint.textContent='每日 07:10 自动更新最新时事热点 · 下次更新 '+nextRefreshText();
+  const wrap = document.getElementById('newsPageList');
+  const upd = document.getElementById('newsUpdateTime');
+  const srcWrap = document.getElementById('newsSourceFilter');
+  if(srcWrap){
+    const names = ['全部', ...NEWS_SOURCES.map(s=>s.name)];
+    srcWrap.innerHTML = names.map(s=>`<button class="nf ${s===newsSourceFilter?'active':''}" onclick="setNewsSourceFilter('${s}')">${s}</button>`).join('');
+  }
+  if(!wrap) return;
+  const draw = (items)=>{
+    let filtered = items;
+    if(newsSourceFilter!=='全部') filtered = filtered.filter(i=>i.source===newsSourceFilter);
+    wrap.innerHTML = filtered.length ? filtered.map(it=>newsItemHTML(it,0,'page')).join('') : '<div class="empty-state"><p>该筛选暂无新闻</p></div>';
+  };
+  draw(newsItemsNow());
+  const cobj = JSON.parse(localStorage.getItem(NEWS_KEY)||'{}');
+  if(upd && cobj.time) upd.textContent = '更新于 ' + new Date(cobj.time).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  refreshNewsData().then(fresh=>{
+    if(fresh&&fresh.length){
+      draw(fresh);
+      if(upd) upd.textContent = '更新于 ' + new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    }
+  });
+}
+function setNewsSourceFilter(c){newsSourceFilter=c;renderNewsPage();}
+function refreshNews(){
+  localStorage.removeItem(NEWS_KEY);
+  renderNewsPage();
+  renderNews();
+  showToast('正在刷新新闻…');
+}
+
+// ============ 时事热点 · 每日 07:10 自动更新 ============
+const NEWS_REFRESH_PREFIX = 'kaogong_news_refresh_';
+let refreshTimer = null;
+function nextRefreshText(){
+  const now=new Date(); const next=new Date(now); next.setHours(7,10,0,0);
+  if(next<=now) next.setDate(next.getDate()+1);
+  const isTomorrow = next.getDate()!==now.getDate();
+  return (isTomorrow?'明天':'今天') + ' 07:10';
+}
+// 强制刷新：清缓存→重新抓取→渲染（新闻页与首页同步）
+async function doNewsRefresh(){
+  try{
+    localStorage.removeItem(NEWS_KEY);
+    await collectNews();
+    localStorage.setItem(NEWS_REFRESH_PREFIX+todayStr(), Date.now());
+    if(currentPage==='news') renderNewsPage();
+    renderNews();
+    showToast('时事热点已更新 📰');
+  }catch(e){}
+}
+function scheduleNewsRefresh(){
+  clearTimeout(refreshTimer);
+  const now=new Date();
+  const next=new Date(now); next.setHours(7,10,0,0);
+  if(next<=now) next.setDate(next.getDate()+1);
+  const ms = next - now;
+  refreshTimer = setTimeout(()=>{ doNewsRefresh(); scheduleNewsRefresh(); }, ms);
+}
+// 打开页面时：若已过 07:10 且今日尚未自动更新，立即补更
+function ensureTodayRefresh(){
+  let done=false;
+  try{ const v=localStorage.getItem(NEWS_REFRESH_PREFIX+todayStr()); if(v) done=true; }catch(e){}
+  if(done) return;
+  const now=new Date();
+  const past = now.getHours()>7 || (now.getHours()===7 && now.getMinutes()>=10);
+  if(past) doNewsRefresh();
+}
+
+// ============ 申论素材库：关键词 + 解读 + 素材摘抄 + 相关新闻（双人共享）============
+let tmpKwNews = [];
+function openKeywordModal(id){
+  let kw=null;
+  if(id){ kw = (state.shared.keywords||[]).find(k=>k.id===id); }
+  tmpKwNews = (kw&&kw.news) ? kw.news.slice() : [];
+  const html = `
+    <h3 style="margin:0 0 14px;color:var(--warm);">${kw?'编辑关键词':'添加关键词'}</h3>
+    <label class="form-label">关键词 / 标签</label>
+    <input id="kwWord" class="form-input" placeholder="如：新质生产力" value="${kw?kw.word:''}">
+    <label class="form-label" style="margin-top:12px;">解读</label>
+    <textarea id="kwNote" class="form-input" rows="3" placeholder="附上你的理解、定义、适用题型…">${kw?kw.note:''}</textarea>
+    <label class="form-label" style="margin-top:12px;">素材摘抄</label>
+    <textarea id="kwExcerpt" class="form-input" rows="4" placeholder="摘抄相关金句、案例、数据，便于申论引用…">${kw?kw.excerpt:''}</textarea>
+    <label class="form-label" style="margin-top:12px;">相关新闻</label>
+    <div id="kwNewsList"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <input id="kwNewsTitle" class="form-input" placeholder="新闻标题">
+      <input id="kwNewsUrl" class="form-input" placeholder="链接（可留空）">
+      <button class="btn btn-sm btn-primary" onclick="addKwNews()">添加</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="btn btn-sm" onclick="closeModal()">取消</button>
+      <button class="btn btn-sm btn-primary" onclick="saveKeyword('${id||''}')">保存</button>
+    </div>`;
+  openModal(html);
+  renderKwNewsList();
+}
+function addKwNews(){
+  const t=(document.getElementById('kwNewsTitle').value||'').trim();
+  const u=(document.getElementById('kwNewsUrl').value||'').trim();
+  if(!t){ showToast('请填写新闻标题'); return; }
+  tmpKwNews.push({title:t, url:u||'#'});
+  document.getElementById('kwNewsTitle').value='';
+  document.getElementById('kwNewsUrl').value='';
+  renderKwNewsList();
+}
+function delKwNewsTmp(i){
+  tmpKwNews.splice(i,1);
+  renderKwNewsList();
+}
+function renderKwNewsList(){
+  const box=document.getElementById('kwNewsList');
+  if(!box) return;
+  if(!tmpKwNews.length){
+    box.innerHTML='<div class="kw-text" style="color:var(--text3)">还没有相关新闻，在上方添加</div>';
+    return;
+  }
+  box.innerHTML = tmpKwNews.map((n,i)=>`
+    <div class="kw-news-row">
+      <span class="kw-news-title">${n.title}</span>
+      <button class="kw-btn kw-btn--del kw-btn--sm" onclick="delKwNewsTmp(${i})">✕</button>
+    </div>`).join('');
+}
+function saveKeyword(id){
+  const word=(document.getElementById('kwWord').value||'').trim();
+  const note=(document.getElementById('kwNote').value||'').trim();
+  const excerpt=(document.getElementById('kwExcerpt').value||'').trim();
+  if(!word){ showToast('请填写关键词'); return; }
+  if(!state.shared.keywords) state.shared.keywords=[];
+  if(id){
+    const k=state.shared.keywords.find(x=>x.id===id);
+    if(k){ k.word=word; k.note=note; k.excerpt=excerpt; k.news=tmpKwNews.slice(); }
+  }else{
+    state.shared.keywords.push({id:'kw'+Date.now(), word, note, excerpt, news:tmpKwNews.slice()});
+  }
+  save(); closeModal(); renderKeywordsPage(); showToast('已保存关键词');
+}
+function deleteKeyword(id){
+  if(!confirm('确定删除该关键词？')) return;
+  state.shared.keywords = (state.shared.keywords||[]).filter(k=>k.id!==id);
+  save(); renderKeywordsPage(); showToast('已删除');
+}
+function renderKeywordsPage(){
+  const wrap=document.getElementById('shenlunKeywordList');
+  if(!wrap) return;
+  const list=state.shared.keywords||[];
+  if(!list.length){
+    wrap.innerHTML='<div class="empty-state"><p>还没有关键词，点「+ 添加关键词」积累你的申论素材库</p></div>';
+    return;
+  }
+  wrap.innerHTML = list.map(k=>`
+    <div class="kw-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="kw-word">${k.word}</span>
+        <div class="kw-actions">
+          <button class="kw-btn kw-btn--edit" onclick="openKeywordModal('${k.id}')">✎ 编辑</button>
+          <button class="kw-btn kw-btn--del" onclick="deleteKeyword('${k.id}')">🗑 删除</button>
+        </div>
+      </div>
+      ${k.note?`<div class="kw-section">解读</div><div class="kw-text">${k.note.replace(/\n/g,'<br>')}</div>`:''}
+      ${k.excerpt?`<div class="kw-section">素材摘抄</div><div class="kw-text">${k.excerpt.replace(/\n/g,'<br>')}</div>`:''}
+      <div class="kw-section">相关新闻</div>
+      ${(k.news&&k.news.length)?k.news.map(n=>`<div class="kw-news">${n.url&&n.url!=='#'?`<a href="${n.url}" target="_blank" rel="noopener">${n.title}</a>`:`<span>${n.title}</span>`}</div>`).join(''):'<div class="kw-text" style="color:var(--text3)">暂无相关新闻，点「编辑」添加</div>'}
+    </div>`).join('');
+}
+
+// ============ 数据同步 ============
+function generateShareLink(){
+  const json = JSON.stringify(state);
+  const encoded = btoa(unescape(encodeURIComponent(json)));
+  const link = window.location.origin + window.location.pathname + '?sync=' + encoded;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(link).then(()=>showToast('分享链接已复制，发给对方吧')).catch(()=>promptCopy(link));
+  }else{promptCopy(link);}
+}
+function promptCopy(link){
+  const ta=document.createElement('textarea');
+  ta.value=link;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  showToast('分享链接已复制，发给对方吧');
+}
+function importFromClipboard(){
+  const input = prompt('粘贴对方分享的同步链接：','');
+  if(!input) return;
+  let encoded = '';
+  try{const url=new URL(input);encoded=url.searchParams.get('sync')||'';}catch(e){encoded=input.includes('sync=')?input.split('sync=')[1]:input;}
+  if(!encoded){showToast('链接格式不正确');return;}
+  try{
+    const json = decodeURIComponent(escape(atob(encoded)));
+    const data = JSON.parse(json);
+    if(data.shared&&data.personA&&data.personB){state=data;save();renderAll();showToast('数据同步成功');}
+    else{showToast('数据格式不正确');}
+  }catch(e){showToast('解析失败');}
+}
+function checkSyncParam(){
+  const params = new URLSearchParams(window.location.search);
+  const sync = params.get('sync');
+  if(sync){
+    try{
+      const json = decodeURIComponent(escape(atob(sync)));
+      const data = JSON.parse(json);
+      if(data.shared&&data.personA&&data.personB){
+        const local=localStorage.getItem('kaogong_v3');
+        if(!local||confirm('检测到对方分享的数据，是否导入？（导入会覆盖当前数据）')){
+          state=data;save();
+          if(window.history.replaceState) window.history.replaceState({},'',window.location.pathname);
+          showToast('已导入对方的数据');
+        }
+      }
+    }catch(e){}
+  }
+}
+
+// ============ 初始化 ============
+function init(){
+  load();
+  loadKeyTs();
+  localStorage.setItem('syncSnap', JSON.stringify(snapshotNow()));
+  checkSyncParam();
+  currentPage='home';
+  document.getElementById('page-home').classList.add('active');
+  document.getElementById('nav-home').classList.add('active');
+  renderAll();
+  setInterval(renderCountdown,60000);
+  ensureTodayRefresh();
+  scheduleNewsRefresh();
+  testAndInitSync();
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+<script>
+// 注册 Service Worker：让网页成为可安装的独立 App（打开后无浏览器地址栏）
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(reg){
+      // 检测到新版本 Service Worker 时，立即跳过等待并接管，随后刷新页面以加载最新 index.html
+      function activateWaiting(){
+        if(reg.waiting){ reg.waiting.postMessage({type:'SKIP_WAITING'}); }
+      }
+      if(reg.waiting){ activateWaiting(); }
+      reg.addEventListener('updatefound',function(){
+        var nw=reg.installing;
+        if(nw){ nw.addEventListener('statechange',function(){
+          if(nw.state==='installed' && navigator.serviceWorker.controller){ nw.postMessage({type:'SKIP_WAITING'}); }
+        }); }
+      });
+    }).catch(function(){/* 忽略注册失败 */});
+    // 当新的 Service Worker 接管页面后，刷新一次以加载最新内容
+    var reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(reloaded) return; reloaded=true; location.reload();
+    });
+  });
+}
+// 独立 App 模式（添加到主屏幕）：标记 html，用于补偿顶部状态栏安全区
+if((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone){
+  document.documentElement.classList.add('standalone');
+}
+</script>
+</body>
+</html>
